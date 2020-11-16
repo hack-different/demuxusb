@@ -35,7 +35,7 @@ typedef struct {
     uint32_t length;
     uint32_t status;
     uint32_t isoFrames;
-    uint32_t uniqueId;
+    uint64_t uniqueId;
     uint32_t locationId;
     uint8_t speed;
     uint8_t deviceId;

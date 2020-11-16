@@ -2,8 +2,8 @@
 // Created by Rick Mark on 11/14/20.
 //
 
-#ifndef DEUSBMUX_CDEVICE_H
-#define DEUSBMUX_CDEVICE_H
+#ifndef DEUSBMUX_DEVICE_H
+#define DEUSBMUX_DEVICE_H
 
 #include <pcapng.h>
 #include <usb.h>
@@ -35,8 +35,8 @@ namespace deusbmux {
     public:
         explicit Device(uint32_t id);
 
-        void processPacket(pcap_usb_header_t* header, void* data);
-        uint64_t getPacketCount() const;
+        void processPacket(void* data);
+        [[nodiscard]] uint64_t getPacketCount() const;
     protected:
         uint32_t m_device;
         uint64_t m_packetCount;
@@ -49,4 +49,4 @@ namespace deusbmux {
 }
 
 
-#endif //DEUSBMUX_CDEVICE_H
+#endif //DEUSBMUX_DEVICE_H

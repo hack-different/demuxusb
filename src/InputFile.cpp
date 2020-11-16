@@ -26,24 +26,27 @@ namespace deusbmux {
             auto *block = (block_t *) location;
 
             if (block->type == TYPE_EPB) {
-                auto *epb = (pcapng_epb_t *) location;
+                auto *epb = (pcapng_epb_t *)(location + sizeof(block_t));
+                assert(epb->interface_id == 0);
 
-                auto *usbHeader = (pcap_usb_header_t *) (location + sizeof(pcapng_epb_t));
+                auto* usbHeader = (darwin_usb_header_t *) (location + sizeof(block_t) + sizeof(pcapng_epb_t));
+                assert(usbHeader->version == 0x101);
 
-                auto deviceId = usbHeader->device_address;
+                auto deviceId = usbHeader->locationId;
+                auto* data = (uint8_t*)(usbHeader + sizeof(darwin_usb_header_t));
 
                 auto &device = this->m_devices[deviceId];
 
-                auto *data = (uint8_t *) (usbHeader + sizeof(pcap_usb_header_t));
+
 
                 if (device == nullptr) {
                     device = std::make_unique<Device>(deviceId);
 
-                    device->processPacket(usbHeader, data);
+                    device->processPacket(data);
 
                     this->m_devices[deviceId] = std::move(device);
                 } else {
-                    device->processPacket(usbHeader, data);
+                    device->processPacket(data);
                 }
             }
 
