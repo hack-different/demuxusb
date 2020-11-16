@@ -8,7 +8,11 @@
 #include <pcapng.h>
 #include <usb.h>
 #include <set>
+#include <map>
 #include <functional>
+#include <string>
+
+#include "InterfaceExpert.h"
 
 namespace deusbmux {
 
@@ -43,8 +47,11 @@ namespace deusbmux {
 
         usb_device_descriptor m_deviceDescriptor;
         std::set<USBConfiguration> m_configurations;
+        std::map<uint16_t, std::u16string> m_strings;
 
         USBControlState m_state;
+
+        std::map<uint8_t, std::shared_ptr<InterfaceExpert>> m_interfaces;
     };
 }
 

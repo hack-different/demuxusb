@@ -21,7 +21,7 @@ namespace deusbmux {
     public:
         explicit InputFile(fs::path path);
 
-        void parse();
+        virtual void parse() = 0;
         std::map<uint32_t, std::shared_ptr<Device>> getDevices();
 
     protected:

@@ -11,7 +11,9 @@ namespace deusbmux {
 
     class PcapNGInputFile : public InputFile {
     public:
-        PcapNGInputFile(fs::path input) : InputFile(input) {}
+        explicit PcapNGInputFile(fs::path input) : InputFile(input) {}
+
+        void parse() override;
     };
 }
 

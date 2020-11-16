@@ -6,7 +6,7 @@
 #define DEUSBMUX_CMUXSTREAM_H
 
 
-class CMuxStream {
+class MuxStream {
 
 };
 

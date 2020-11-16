@@ -13,7 +13,7 @@ int main(int argc, const char* argv[]) {
 
     std::unique_ptr<InputFile> input = nullptr;
 
-    if (input_path.extension() == "pcapng") {
+    if (input_path.extension() == ".pcapng") {
         input = std::make_unique<PcapNGInputFile>(input_path);
     } else {
         std::cerr << "Input file type is not supported." << std::endl;
@@ -21,6 +21,10 @@ int main(int argc, const char* argv[]) {
     }
 
     input->parse();
+
+    for (const auto& device : input->getDevices()) {
+        std::cout << "Device ID: " << device.first << " had " << device.second->getPacketCount() << " packets." << std::endl;
+    }
 
     return 0;
 }
