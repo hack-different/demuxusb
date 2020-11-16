@@ -5,10 +5,13 @@
 #ifndef DEUSBMUX_PCAPNGINPUTFILE_H
 #define DEUSBMUX_PCAPNGINPUTFILE_H
 
-namespace demuxusb {
+#include "InputFile.h"
 
-    class PcapNGInputFile {
+namespace deusbmux {
 
+    class PcapNGInputFile : public InputFile {
+    public:
+        PcapNGInputFile(fs::path input) : InputFile(input) {}
     };
 }
 

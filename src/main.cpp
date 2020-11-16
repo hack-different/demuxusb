@@ -2,22 +2,25 @@
 #include <boost/filesystem.hpp>
 #include <memory>
 #include "InputFile.h"
+#include "PcapNGInputFile.h"
 
 namespace fs = boost::filesystem;
 
 using namespace deusbmux;
 
 int main(int argc, const char* argv[]) {
-    fs::path inputPath(argv[1]);
+    fs::path input_path(argv[1]);
 
-    auto inputFile = std::make_unique<InputFile>(inputPath);
+    std::unique_ptr<InputFile> input = nullptr;
 
-    inputFile->parse();
-
-    for (auto const& device : inputFile->getDevices()) {
-        std::cout << "Device ID: " << std::hex << device.first << std::endl;
-        std::cout << "Packet Count: " << std::dec << device.second->getPacketCount() << std::endl;
+    if (input_path.extension() == "pcapng") {
+        input = std::make_unique<PcapNGInputFile>(input_path);
+    } else {
+        std::cerr << "Input file type is not supported." << std::endl;
+        exit(-1);
     }
+
+    input->parse();
 
     return 0;
 }
