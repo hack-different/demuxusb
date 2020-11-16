@@ -10,8 +10,8 @@ pkg_check_modules(PLIST REQUIRED IMPORTED_TARGET libplist-2.0 )
 
 find_package( Boost REQUIRED COMPONENTS container filesystem iostreams )
 
-add_executable(deusbmux src/main.cpp src/CInputFile.cpp src/CInputFile.h
-        src/CDevice.cpp src/CDevice.h src/CMuxStream.cpp src/CMuxStream.h)
+add_executable(deusbmux src/main.cpp src/InputFile.cpp src/InputFile.h
+        src/Device.cpp src/Device.h src/MuxStream.cpp src/MuxStream.h src/PcapNGInputFile.cpp src/PcapNGInputFile.h)
 
 target_include_directories(deusbmux PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
