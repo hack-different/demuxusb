@@ -36,8 +36,10 @@ namespace deusbmux {
         explicit Device(uint32_t id);
 
         void processPacket(pcap_usb_header_t* header, void* data);
+        uint64_t getPacketCount() const;
     protected:
         uint32_t m_device;
+        uint64_t m_packetCount;
 
         usb_device_descriptor m_deviceDescriptor;
         std::set<USBConfiguration> m_configurations;

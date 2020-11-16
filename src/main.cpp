@@ -14,5 +14,10 @@ int main(int argc, const char* argv[]) {
 
     inputFile->parse();
 
+    for (auto const& device : inputFile->getDevices()) {
+        std::cout << "Device ID: " << std::hex << device.first << std::endl;
+        std::cout << "Packet Count: " << std::dec << device.second->getPacketCount() << std::endl;
+    }
+
     return 0;
 }

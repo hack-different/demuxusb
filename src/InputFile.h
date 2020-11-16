@@ -22,11 +22,12 @@ namespace deusbmux {
         explicit InputFile(fs::path path);
 
         void parse();
+        std::map<uint32_t, std::shared_ptr<Device>> getDevices();
 
     protected:
         fs::path m_path;
         io::mapped_file_source m_mappedInputFile;
-        std::map<uint32_t, std::unique_ptr<Device>> m_devices;
+        std::map<uint32_t, std::shared_ptr<Device>> m_devices;
     };
 }
 

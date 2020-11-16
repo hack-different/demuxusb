@@ -6,6 +6,45 @@
 
 #define TYPE_EPB 0x06
 
+#define USB_CONTROL_STAGE_SETUP    0x00
+#define USB_CONTROL_STAGE_DATA     0x01
+#define USB_CONTROL_STAGE_STATUS   0x02
+#define USB_CONTROL_STAGE_COMPLETE 0x03
+
+#define USB_EP_CONTROL     0x00
+#define USB_EP_ISOCHRONOUS 0x01
+#define USB_EP_BULK        0x02
+#define USB_EP_INTERRUPT   0x03
+
+#define DARWIN_IO_SUBMIT   0
+#define DARWIN_IO_COMPLETE 1
+
+
+/* USB speeds */
+#define DARWIN_SPEED_LOW         0
+#define DARWIN_SPEED_FULL        1
+#define DARWIN_SPEED_HIGH        2
+#define DARWIN_SPEED_SUPER       3
+#define DARWIN_SPEED_SUPERPLUS   4
+
+
+typedef struct {
+    uint16_t version;
+    uint8_t headerLength;
+    uint8_t type;
+    uint32_t length;
+    uint32_t status;
+    uint32_t isoFrames;
+    uint32_t uniqueId;
+    uint32_t locationId;
+    uint8_t speed;
+    uint8_t deviceId;
+    uint8_t endpointId;
+    uint8_t endpointType;
+} darwin_usb_header_t;
+
+
+
 typedef struct {
     uint32_t type;
     uint32_t length;

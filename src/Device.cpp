@@ -24,6 +24,12 @@ namespace deusbmux {
 
         //std::cout << "URB Length: " << std::hex << header->urb_len << std::endl;
         //std::cout << "Data Length: " << std::hex << header->data_len << std::endl;
+
+        this->m_packetCount++;
+    }
+
+    uint64_t Device::getPacketCount() const {
+        return this->m_packetCount;
     }
 
 }

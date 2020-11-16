@@ -56,4 +56,8 @@ namespace deusbmux {
             location += block->length;
         }
     }
+
+    std::map<uint32_t, std::shared_ptr<Device>> InputFile::getDevices() {
+        return this->m_devices;
+    }
 }
