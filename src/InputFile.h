@@ -13,9 +13,19 @@
 
 #include "Device.h"
 
+#define USB_ENDPOINT_IN(endpoint) (endpoint & 0x80)
+#define USB_ENDPOINT_OUT(endpoint) (!(endpoint & 0x80))
+#define USB_ENDPOINT_ID(endpoint) (endpoint & 0x7F)
+
 namespace deusbmux {
     namespace fs = boost::filesystem;
     namespace io = boost::iostreams;
+
+    typedef struct {
+        uint8_t endpoint;
+        uint32_t length;
+
+    } usb_frame_info_t;
 
     class InputFile {
     public:
