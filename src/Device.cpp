@@ -4,6 +4,9 @@
 
 
 #include "Device.h"
+#include "DFUInterfaceExpert.h"
+#include "RecoveryInterfaceExpert.h"
+#include "USBMUXInterfaceExpert.h"
 
 namespace deusbmux {
 
@@ -37,6 +40,27 @@ namespace deusbmux {
                             if (configDescriptor->wTotalLength != data.second) { break; }
                             auto config = usb_configuration{};
                             usb_configuration::parse(config, data.first, data.second);
+
+                            // Attach experts
+                            for (auto& interface : config.interfaces) {
+                                if (this->isAppleDFU()) {
+                                    interface.expert = std::make_unique<DFUInterfaceExpert>();
+                                    std::cout << "Added DFUInterfaceExpert for " << std::hex << this->getIdentifier() <<
+                                    " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                } else if (this->isAppleRecovery()) {
+                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>();
+                                    std::cout << "Added RecoveryInterfaceExpert for " << std::hex << this->getIdentifier() <<
+                                              " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                } else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
+                                    interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
+                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2) {
+
+                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>();
+                                    std::cout << "Added USBMUXInterfaceExpert for " << std::hex << this->getIdentifier() <<
+                                              " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                }
+                            }
+
                             this->m_configurations[configurationIndex] = config;
                         }
                         break;
@@ -107,6 +131,7 @@ namespace deusbmux {
                     assert(header->bLength == sizeof(usb_interface_descriptor));
                     interface = usb_interface{};
                     memcpy(&interface.interface, data, sizeof(usb_interface_descriptor));
+
                     config.interfaces[interface.interface.bInterfaceNumber] = interface;
                     break;
                 case USB_DT_ENDPOINT: {

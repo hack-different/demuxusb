@@ -18,6 +18,7 @@ namespace deusbmux {
     struct usb_interface {
         usb_interface_descriptor interface;
         std::vector<usb_endpoint_descriptor> endpoints;
+        std::shared_ptr<InterfaceExpert> expert;
     };
 
     struct usb_configuration {
@@ -36,6 +37,18 @@ namespace deusbmux {
         explicit Device(uint64_t id) : m_device{id}, m_vendorId{}, m_productId{} {}
 
         [[nodiscard]] uint64_t getIdentifier() const { return this->m_device; }
+
+        [[nodiscard]] bool isApple() const { return this->m_deviceDescriptor.idVendor == APPLE_VID; }
+        [[nodiscard]] bool isAppleDFU() const { return this->m_deviceDescriptor.idVendor == APPLE_VID && this->m_deviceDescriptor.idProduct == IRECV_K_DFU_MODE; }
+        [[nodiscard]] bool isAppleRecovery() const {
+            if (this->m_deviceDescriptor.idVendor == APPLE_VID) {
+                return ((this->m_deviceDescriptor.idProduct == IRECV_K_RECOVERY_MODE_1) ||
+                        (this->m_deviceDescriptor.idProduct == IRECV_K_RECOVERY_MODE_2) ||
+                        (this->m_deviceDescriptor.idProduct == IRECV_K_RECOVERY_MODE_3) ||
+                        (this->m_deviceDescriptor.idProduct == IRECV_K_RECOVERY_MODE_4));
+            }
+            return false;
+        }
 
         std::wstring getString(uint8_t index) {
             if (this->m_strings.contains(index)) {
