@@ -45,19 +45,27 @@ namespace deusbmux {
                             for (auto& interface : config.interfaces) {
                                 if (this->isAppleDFU()) {
                                     interface.expert = std::make_unique<DFUInterfaceExpert>();
+
                                     std::cout << "Added DFUInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                    " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
+                                                 (int)interface.interface.bAlternateSetting<< std::endl;
+
                                 } else if (this->isAppleRecovery()) {
                                     interface.expert = std::make_unique<RecoveryInterfaceExpert>();
+
                                     std::cout << "Added RecoveryInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                              " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
+                                                 (int)interface.interface.bAlternateSetting << std::endl;
+
                                 } else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
                                     interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
                                     interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2) {
 
                                     interface.expert = std::make_unique<USBMUXInterfaceExpert>();
+
                                     std::cout << "Added USBMUXInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                              " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << std::endl;
+                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
+                                                 (int)interface.interface.bAlternateSetting << std::endl;
                                 }
                             }
 
