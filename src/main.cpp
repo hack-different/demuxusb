@@ -4,14 +4,14 @@
 #include "InputFile.h"
 #include "PcapNGInputFile.h"
 
-namespace fs = boost::filesystem;
+
 
 using namespace deusbmux;
 
 int main(int argc, const char* argv[]) {
     fs::path input_path(argv[1]);
 
-    std::unique_ptr<InputFile> input = nullptr;
+    std::unique_ptr<InputFile> input;
 
     if (input_path.extension() == ".pcapng") {
         input = std::make_unique<PcapNGInputFile>(input_path);
@@ -23,7 +23,10 @@ int main(int argc, const char* argv[]) {
     input->parse();
 
     for (const auto& device : input->getDevices()) {
-        std::cout << "Device ID: " << device.first << " had " << device.second->getPacketCount() << " packets." << std::endl;
+        std::cout << "Device ID: " << device->getIdentifier() << " had " << device->getPacketCount() << " packets and " <<
+        device->getByteCount() << " bytes. (control " << device->getControlPacketCount() << " packets, " <<
+        device->getControlByteCount() << " bytes)." << std::endl;
+
     }
 
     return 0;

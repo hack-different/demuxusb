@@ -3,11 +3,12 @@
 //
 
 #include "PcapNGInputFile.h"
-#include <iostream>
+
 
 namespace deusbmux {
     void PcapNGInputFile::parse() {
-        auto *location = (uint8_t *) this->m_mappedInputFile.data();
+
+        auto *location = (std::byte*) this->m_mappedInputFile.data();
         const auto *endLocation = location + this->m_mappedInputFile.size();
 
         while (location < endLocation) {
@@ -17,22 +18,51 @@ namespace deusbmux {
                 auto *epb = (pcapng_epb_t *)(location + sizeof(block_t));
                 assert(epb->interface_id == 0);
 
-                auto* usbHeader = (darwin_usb_header_t *) (location + sizeof(block_t) + sizeof(pcapng_epb_t));
+                auto* usbHeader = (darwin_usb_header_1_1_t *) (location + sizeof(block_t) + sizeof(pcapng_epb_t));
                 assert(usbHeader->version == 0x101);
+                assert(usbHeader->headerLength == sizeof(darwin_usb_header_1_1_t));
 
-                auto deviceId = usbHeader->deviceId;
-                auto* data = (uint8_t*)(usbHeader + sizeof(darwin_usb_header_t));
+                auto deviceAddress = (((uint64_t)usbHeader->locationId) << 32U) | usbHeader->deviceId;
 
-                auto &device = this->m_devices[deviceId];
+                auto* dataAddress = (location + sizeof(block_t) + sizeof(pcapng_epb_t) + usbHeader->headerLength);
+                const auto data = byte_array { dataAddress, usbHeader->length };
+                const auto endpointId = (usb_endpoint_id)usbHeader->endpointId;
+
+                auto &device = this->m_devices[deviceAddress];
 
                 if (device == nullptr) {
-                    device = std::make_unique<Device>(deviceId);
+                    device = std::make_shared<DeviceHandle>(deviceAddress, usbHeader->usbVendorId, usbHeader->usbProductId);
+                    this->m_devices[deviceAddress] = device;
+                }
 
-                    device->processPacket(data);
+                switch (usbHeader->endpointType) {
+                    case USB_EP_CONTROL:
+                        if (usbHeader->type == DARWIN_IO_SUBMIT) {
+                            auto* setup = (usb_setup_t*)data.first;
+                            device->beginControl(USB_ENDPOINT_ID(usbHeader->endpointId), usbHeader->uniqueId, setup);
+                        } else if (usbHeader->type == DARWIN_IO_COMPLETE) {
+                            auto setup = device->endControl(USB_ENDPOINT_ID(usbHeader->endpointId), usbHeader->uniqueId);
 
-                    this->m_devices[deviceId] = std::move(device);
-                } else {
-                    device->processPacket(data);
+                            if (USB_ENDPOINT_IN(usbHeader->endpointId)) {
+                                device->device()->processControlPacketIn(USB_ENDPOINT_ID(usbHeader->endpointId), setup, data);
+                            } else {
+                                device->device()->processControlPacketOut(USB_ENDPOINT_ID(usbHeader->endpointId), setup, data);
+                            }
+                        }
+                        break;
+                    case USB_EP_BULK:
+                        if (usbHeader->type == DARWIN_IO_SUBMIT) {
+                            device->beginBulk(usbHeader->endpointId, usbHeader->uniqueId);
+                        } else {
+                            device->endBulk(usbHeader->endpointId, usbHeader->uniqueId);
+
+                            if (USB_ENDPOINT_IN(usbHeader->endpointId)) {
+                                device->device()->processBulkPacketIn(USB_ENDPOINT_ID(usbHeader->endpointId), data);
+                            } else {
+                                device->device()->processBulkPacketOut(USB_ENDPOINT_ID(usbHeader->endpointId), data);
+                            }
+                        }
+                        break;
                 }
             }
 
@@ -45,4 +75,6 @@ namespace deusbmux {
             location += block->length;
         }
     }
+
+    PcapNGInputFile::~PcapNGInputFile() = default;
 }

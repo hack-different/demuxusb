@@ -5,6 +5,7 @@
 #ifndef DEUSBMUX_INTERFACEEXPERT_H
 #define DEUSBMUX_INTERFACEEXPERT_H
 
+#include "deusbmux.hpp"
 
 class InterfaceExpert {
 

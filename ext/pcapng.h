@@ -27,6 +27,20 @@
 #define DARWIN_SPEED_SUPER       3
 #define DARWIN_SPEED_SUPERPLUS   4
 
+typedef struct {
+    uint16_t version;
+    uint8_t headerLength;
+    uint8_t type;
+    uint32_t length;
+    uint32_t status;
+    uint32_t isoFrames;
+    uint64_t uniqueId;
+    uint32_t locationId;
+    uint8_t speed;
+    uint8_t deviceId;
+    uint8_t endpointId;
+    uint8_t endpointType;
+} darwin_usb_header_1_0_t;
 
 typedef struct {
     uint16_t version;
@@ -41,7 +55,13 @@ typedef struct {
     uint8_t deviceId;
     uint8_t endpointId;
     uint8_t endpointType;
-} darwin_usb_header_t;
+    uint8_t usbClass;
+    uint8_t usbSubclass;
+    uint8_t usbInterface;
+    uint8_t usbInterfaceAlternate;
+    uint16_t usbVendorId;
+    uint16_t usbProductId;
+} darwin_usb_header_1_1_t;
 
 
 
@@ -67,7 +87,7 @@ typedef struct {
     uint16_t wValue;
     uint16_t wIndex;
     uint16_t wLength;
-} pcap_usb_setup_t;
+} usb_setup_t;
 
 typedef struct {
     uint64_t id;
@@ -83,7 +103,7 @@ typedef struct {
     int32_t status;
     uint32_t urb_len;
     uint32_t data_len; /* amount of urb data really present in this event*/
-    pcap_usb_setup_t setup;
+    usb_setup_t setup;
 } pcap_usb_header_t;
 
 #endif

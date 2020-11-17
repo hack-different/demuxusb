@@ -5,6 +5,7 @@
 #ifndef DEUSBMUX_RECOVERYINTERFACEEXPERT_H
 #define DEUSBMUX_RECOVERYINTERFACEEXPERT_H
 
+#include "deusbmux.hpp"
 #include "InterfaceExpert.h"
 
 class RecoveryInterfaceExpert : public InterfaceExpert {

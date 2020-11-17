@@ -19,13 +19,14 @@ add_executable(deusbmux src/main.cpp src/InputFile.cpp src/InputFile.h
         src/USBMUXInterfaceExpert.cpp src/USBMUXInterfaceExpert.h src/USBDescriptor.cpp src/USBDescriptor.h )
 
 target_include_directories(deusbmux PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext)
-
+target_precompile_headers(deusbmux PRIVATE src/deusbmux.hpp)
 target_link_libraries(deusbmux PUBLIC PkgConfig::PLIST Boost::container
         Boost::iostreams Boost::filesystem)
 
 
 # Testing framework
 add_executable(deusbmux_test_suite test/test_main.cpp test/test_PcapNGInputFile.cpp)
+target_precompile_headers(deusbmux_test_suite REUSE_FROM deusbmux)
 target_link_libraries(deusbmux_test_suite PUBLIC Boost::unit_test_framework)
 target_include_directories(deusbmux_test_suite PRIVATE ${Boost_INCLUDE_DIRS})
 add_test(NAME tests COMMAND deusbmux_test_suite)
