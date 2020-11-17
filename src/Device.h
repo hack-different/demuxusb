@@ -17,6 +17,7 @@ namespace deusbmux {
 
     struct usb_interface {
         usb_interface_descriptor interface;
+        std::vector<usb_endpoint_descriptor> endpoints;
     };
 
     struct usb_configuration {
@@ -82,6 +83,7 @@ namespace deusbmux {
         uint64_t m_controlPacketCount{};
         uint64_t m_controlByteCount{};
 
+        uint8_t m_currentConfiguration{};
         usb_device_descriptor m_deviceDescriptor{};
         std::vector<usb_configuration> m_configurations{};
         std::map<uint16_t, std::wstring> m_strings;

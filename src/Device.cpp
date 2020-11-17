@@ -54,6 +54,18 @@ namespace deusbmux {
                             this->m_strings[descriptorIndex] = std::wstring{std::begin(stringValue), std::end(stringValue)};
                         }
                         break;
+                    case USB_DT_BOS: {
+                        assert(header->bLength >= sizeof(usb_bos_descriptor));
+                        auto* bos_descriptor = (usb_bos_descriptor*)data.first;
+                        if (header->bLength != bos_descriptor->wTotalLength) { break; }
+                        struct bos_descriptor bos{};
+                        memcpy(&bos.descriptor, data.first, sizeof(usb_bos_descriptor));
+                        std::byte* bos_data = data.first + sizeof(usb_bos_descriptor);
+                        auto bos_data_size = bos_descriptor->wTotalLength - sizeof(usb_bos_descriptor);
+                        bos.data.resize(bos_data_size);
+                        memcpy(bos.data.data(), bos_data, bos_data_size);
+                        break;
+                    }
                     default:
                         std::cerr << "Unknown descriptor type " << std::hex << descriptorType << std::endl;
                 }
@@ -65,6 +77,12 @@ namespace deusbmux {
         this->m_controlPacketCount++;
         this->m_controlByteCount += data.second;
 
+        if (USB_ENDPOINT_ID(endpoint) == 0) {
+            if (setup.bmRequestType == 0x00 && setup.bRequest == 0x09) {
+                this->m_currentConfiguration = setup.wValue;
+                std::cout << "Device " << std::hex << this->getIdentifier() << " set configuration to " << std::dec << (int)this->m_currentConfiguration << std::endl;
+            }
+        }
     }
 
     void usb_configuration::parse(usb_configuration &config, std::byte *data, size_t size) {
@@ -91,10 +109,16 @@ namespace deusbmux {
                     memcpy(&interface.interface, data, sizeof(usb_interface_descriptor));
                     config.interfaces[interface.interface.bInterfaceNumber] = interface;
                     break;
-                case USB_DT_BOS:
-
+                case USB_DT_ENDPOINT: {
+                    assert((header->bLength == USB_DT_ENDPOINT_SIZE) ||  (header->bLength == sizeof(usb_endpoint_descriptor)));
+                    usb_endpoint_descriptor endpoint{};
+                    memcpy(&endpoint, header, header->bLength);
+                    interface.endpoints.push_back(endpoint);
+                    config.interfaces[interface.interface.bInterfaceNumber] = interface;
+                    break;
+                }
                 default:
-                    std::cerr << "Unknown configuration descriptor type " << std::hex << header->bDescriptorType << std::endl;
+                    std::cerr << "Unknown configuration descriptor type " << std::hex << (int)header->bDescriptorType << std::endl;
             }
 
             data += header->bLength;
