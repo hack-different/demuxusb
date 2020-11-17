@@ -10,15 +10,21 @@
 
 namespace deusbmux {
 
-    struct usb_interface_descriptor_comparator : std::binary_function<usb_interface_descriptor, usb_interface_descriptor, bool> {
-        bool operator() (const usb_interface_descriptor& x, const usb_interface_descriptor& y) const { return x.bInterfaceNumber == y.bInterfaceNumber; }
+    struct bos_descriptor {
+        usb_bos_descriptor descriptor;
+        std::vector<std::byte> data;
     };
 
-    struct USBConfiguration  {
-        usb_config_descriptor descriptor;
-        std::set<usb_interface_descriptor, usb_interface_descriptor_comparator> interfaces;
+    struct usb_interface {
+        usb_interface_descriptor interface;
+    };
 
-        bool operator==(const USBConfiguration& other) const { return this->descriptor.bConfigurationValue == other.descriptor.bConfigurationValue; }
+    struct usb_configuration {
+        usb_config_descriptor descriptor;
+        usb_dfu_functional_descriptor dfu_descriptor;
+        std::vector<usb_interface> interfaces{};
+
+        static void parse(usb_configuration& config, std::byte *data, size_t size);
     };
 
     // The device class is a state machine that reconstructs the devices properties by composing the control endpoint
@@ -26,19 +32,46 @@ namespace deusbmux {
     //  metadata from the control endpoint allow for endpoint experts to raise the traffic from there.
     class Device {
     public:
-        explicit Device(uint64_t id, uint16_t vendorId, uint16_t productId) : m_device{id}, m_vendorId{vendorId}, m_productId{productId} {}
+        explicit Device(uint64_t id) : m_device{id}, m_vendorId{}, m_productId{} {}
 
-        uint64_t getIdentifier() { return this->m_device; }
+        [[nodiscard]] uint64_t getIdentifier() const { return this->m_device; }
+
+        std::wstring getString(uint8_t index) {
+            if (this->m_strings.contains(index)) {
+                return this->m_strings[index];
+            }
+
+            return L"<unknown>";
+        }
+
+        std::wstring getProduct() { return this->getString(this->m_deviceDescriptor.iProduct); }
+
+        std::wstring getManufacturer() { return this->getString(this->m_deviceDescriptor.iManufacturer); }
+
+        std::wstring getSerial() { return this->getString(this->m_deviceDescriptor.iSerialNumber); }
 
         void processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data);
+
         void processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data);
-        void processBulkPacketIn(uint8_t endpoint, byte_array data) { this->m_packetCount++; this->m_byteCount += data.second; }
-        void processBulkPacketOut(uint8_t endpoint, byte_array data)  { this->m_packetCount++; this->m_byteCount += data.second; }
+
+        void processBulkPacketIn(uint8_t endpoint, byte_array data) {
+            this->m_packetCount++;
+            this->m_byteCount += data.second;
+        }
+
+        void processBulkPacketOut(uint8_t endpoint, byte_array data) {
+            this->m_packetCount++;
+            this->m_byteCount += data.second;
+        }
 
         [[nodiscard]] uint64_t getPacketCount() const { return this->m_packetCount; }
+
         [[nodiscard]] uint64_t getByteCount() const { return this->m_byteCount; }
+
         [[nodiscard]] uint64_t getControlPacketCount() const { return this->m_controlPacketCount; }
+
         [[nodiscard]] uint64_t getControlByteCount() const { return this->m_controlByteCount; }
+
     protected:
         uint64_t m_device;
         uint16_t m_vendorId;
@@ -50,8 +83,9 @@ namespace deusbmux {
         uint64_t m_controlByteCount{};
 
         usb_device_descriptor m_deviceDescriptor{};
-        std::set<USBConfiguration> m_configurations;
-        std::map<uint16_t, std::u16string> m_strings;
+        std::vector<usb_configuration> m_configurations{};
+        std::map<uint16_t, std::wstring> m_strings;
+        std::vector<bos_descriptor> m_bosDescriptors{};
 
         usb_setup_t m_controlSetup{};
 

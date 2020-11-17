@@ -12,10 +12,10 @@ namespace deusbmux {
         this->m_mappedInputFile.open(this->m_path);
     }
 
-    std::vector<Device*> InputFile::getDevices() {
-        auto result = std::vector<Device*>{};
+    std::vector<Device *> InputFile::getDevices() {
+        auto result = std::vector<Device *>{};
 
-        for (const auto& device : this->m_devices) {
+        for (const auto &device : this->m_devices) {
             result.push_back(device.second->device());
         }
 

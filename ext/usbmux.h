@@ -24,6 +24,7 @@
 #define USBMUXD_PROTO_H
 
 #include <stdint.h>
+
 #define USBMUXD_PROTOCOL_VERSION 0
 
 #if defined(WIN32) || defined(__CYGWIN__)
@@ -47,7 +48,7 @@ enum usbmuxd_result {
 };
 
 enum usbmuxd_msgtype {
-    MESSAGE_RESULT  = 1,
+    MESSAGE_RESULT = 1,
     MESSAGE_CONNECT = 2,
     MESSAGE_LISTEN = 3,
     MESSAGE_DEVICE_ADD = 4,

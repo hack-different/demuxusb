@@ -64,7 +64,6 @@ typedef struct {
 } darwin_usb_header_1_1_t;
 
 
-
 typedef struct {
     uint32_t type;
     uint32_t length;

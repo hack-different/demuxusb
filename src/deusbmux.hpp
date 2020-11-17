@@ -21,10 +21,11 @@
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+
 namespace fs = boost::filesystem;
 namespace io = boost::iostreams;
 
-typedef std::pair<std::byte*, std::size_t> byte_array;
+typedef std::pair<std::byte *, std::size_t> byte_array;
 typedef uint8_t usb_endpoint_id;
 
 

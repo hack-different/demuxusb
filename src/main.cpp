@@ -5,10 +5,9 @@
 #include "PcapNGInputFile.h"
 
 
-
 using namespace deusbmux;
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
     fs::path input_path(argv[1]);
 
     std::unique_ptr<InputFile> input;
@@ -22,10 +21,13 @@ int main(int argc, const char* argv[]) {
 
     input->parse();
 
-    for (const auto& device : input->getDevices()) {
-        std::cout << "Device ID: " << device->getIdentifier() << " had " << device->getPacketCount() << " packets and " <<
-        device->getByteCount() << " bytes. (control " << device->getControlPacketCount() << " packets, " <<
-        device->getControlByteCount() << " bytes)." << std::endl;
+    for (const auto &device : input->getDevices()) {
+        std::wcout << L"Device ID: " << std::hex << device->getIdentifier() << std::endl;
+        std::wcout << L"  Manufacturer: " << device->getManufacturer() << std::endl;
+        std::wcout << L"  Product: " << device->getProduct() << std::endl;
+        std::wcout << L"  Statistics: " << std::dec << device->getPacketCount() << L" packets and " <<
+                   device->getByteCount() << L" bytes. (control " << device->getControlPacketCount() << L" packets, " <<
+                   device->getControlByteCount() << L" bytes)." << std::endl;
 
     }
 
