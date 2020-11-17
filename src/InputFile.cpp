@@ -5,7 +5,7 @@
 #include "InputFile.h"
 
 
-namespace deusbmux {
+namespace demuxusb {
     InputFile::InputFile(fs::path path) {
         this->m_path = std::move(path);
 

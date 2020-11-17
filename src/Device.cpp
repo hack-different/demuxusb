@@ -8,7 +8,7 @@
 #include "RecoveryInterfaceExpert.h"
 #include "USBMUXInterfaceExpert.h"
 
-namespace deusbmux {
+namespace demuxusb {
 
 
     void Device::processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data) {

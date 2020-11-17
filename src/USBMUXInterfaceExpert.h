@@ -2,10 +2,10 @@
 // Created by Rick Mark on 11/16/20.
 //
 
-#ifndef DEUSBMUX_USBMUXINTERFACEEXPERT_H
-#define DEUSBMUX_USBMUXINTERFACEEXPERT_H
+#ifndef demuxusb_USBMUXINTERFACEEXPERT_H
+#define demuxusb_USBMUXINTERFACEEXPERT_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 #include "InterfaceExpert.h"
 #include "MuxStream.h"
 
@@ -18,4 +18,4 @@ private:
 };
 
 
-#endif //DEUSBMUX_USBMUXINTERFACEEXPERT_H
+#endif //demuxusb_USBMUXINTERFACEEXPERT_H

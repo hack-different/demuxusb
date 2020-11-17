@@ -2,14 +2,14 @@
 // Created by Rick Mark on 11/16/20.
 //
 
-#ifndef DEUSBMUX_USBDESCRIPTOR_H
-#define DEUSBMUX_USBDESCRIPTOR_H
+#ifndef demuxusb_USBDESCRIPTOR_H
+#define demuxusb_USBDESCRIPTOR_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 
 class USBDescriptor {
 
 };
 
 
-#endif //DEUSBMUX_USBDESCRIPTOR_H
+#endif //demuxusb_USBDESCRIPTOR_H

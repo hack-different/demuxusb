@@ -2,13 +2,13 @@
 // Created by Rick Mark on 11/14/20.
 //
 
-#ifndef DEUSBMUX_DEVICE_H
-#define DEUSBMUX_DEVICE_H
+#ifndef demuxusb_DEVICE_H
+#define demuxusb_DEVICE_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 #include "InterfaceExpert.h"
 
-namespace deusbmux {
+namespace demuxusb {
 
     struct bos_descriptor {
         usb_bos_descriptor descriptor;
@@ -109,4 +109,4 @@ namespace deusbmux {
 }
 
 
-#endif //DEUSBMUX_DEVICE_H
+#endif //demuxusb_DEVICE_H

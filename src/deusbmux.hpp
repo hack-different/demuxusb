@@ -1,5 +1,5 @@
-#ifndef _DEUSBMUX_H
-#define _DEUSBMUX_H
+#ifndef _demuxusb_H
+#define _demuxusb_H
 
 // External dependencies for formats
 #include <pcapng.h>

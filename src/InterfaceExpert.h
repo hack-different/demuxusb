@@ -2,14 +2,14 @@
 // Created by Rick Mark on 11/16/20.
 //
 
-#ifndef DEUSBMUX_INTERFACEEXPERT_H
-#define DEUSBMUX_INTERFACEEXPERT_H
+#ifndef demuxusb_INTERFACEEXPERT_H
+#define demuxusb_INTERFACEEXPERT_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 
 class InterfaceExpert {
 
 };
 
 
-#endif //DEUSBMUX_INTERFACEEXPERT_H
+#endif //demuxusb_INTERFACEEXPERT_H

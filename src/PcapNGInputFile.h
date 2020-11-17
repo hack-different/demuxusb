@@ -2,15 +2,15 @@
 // Created by Rick Mark on 11/15/20.
 //
 
-#ifndef DEUSBMUX_PCAPNGINPUTFILE_H
-#define DEUSBMUX_PCAPNGINPUTFILE_H
+#ifndef demuxusb_PCAPNGINPUTFILE_H
+#define demuxusb_PCAPNGINPUTFILE_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 #include "InputFile.h"
 
 #include <utility>
 
-namespace deusbmux {
+namespace demuxusb {
 
     class PcapNGInputFile : public InputFile {
     public:
@@ -22,4 +22,4 @@ namespace deusbmux {
     };
 }
 
-#endif //DEUSBMUX_PCAPNGINPUTFILE_H
+#endif //demuxusb_PCAPNGINPUTFILE_H

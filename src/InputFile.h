@@ -2,14 +2,14 @@
 // Created by Rick Mark on 11/14/20.
 //
 
-#ifndef DEUSBMUX_CINPUTFILE_H
-#define DEUSBMUX_CINPUTFILE_H
+#ifndef demuxusb_CINPUTFILE_H
+#define demuxusb_CINPUTFILE_H
 
-#include "deusbmux.hpp"
+#include "demuxusb.hpp"
 #include "Device.h"
 
 
-namespace deusbmux {
+namespace demuxusb {
 
     class DeviceHandle {
     public:
@@ -96,4 +96,4 @@ namespace deusbmux {
     };
 }
 
-#endif //DEUSBMUX_CINPUTFILE_H
+#endif //demuxusb_CINPUTFILE_H

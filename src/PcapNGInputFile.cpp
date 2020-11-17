@@ -5,7 +5,7 @@
 #include "PcapNGInputFile.h"
 
 
-namespace deusbmux {
+namespace demuxusb {
     void PcapNGInputFile::parse() {
 
         auto *location = (std::byte *) this->m_mappedInputFile.data();

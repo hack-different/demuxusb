@@ -5,7 +5,7 @@
 #include "PcapNGInputFile.h"
 
 
-using namespace deusbmux;
+using namespace demuxusb;
 
 int main(int argc, const char *argv[]) {
     fs::path input_path(argv[1]);
