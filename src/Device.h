@@ -30,8 +30,8 @@ namespace deusbmux {
 
         uint64_t getIdentifier() { return this->m_device; }
 
-        void processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data) { this->m_controlPacketCount++; this->m_controlByteCount += data.second; }
-        void processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data) { this->m_controlPacketCount++; this->m_controlByteCount += data.second; }
+        void processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data);
+        void processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data);
         void processBulkPacketIn(uint8_t endpoint, byte_array data) { this->m_packetCount++; this->m_byteCount += data.second; }
         void processBulkPacketOut(uint8_t endpoint, byte_array data)  { this->m_packetCount++; this->m_byteCount += data.second; }
 
