@@ -5,7 +5,7 @@
 #ifndef demuxusb_CMUXSTREAM_H
 #define demuxusb_CMUXSTREAM_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 
 class MuxStream {
 

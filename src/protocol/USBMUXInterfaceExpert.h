@@ -5,7 +5,7 @@
 #ifndef demuxusb_USBMUXINTERFACEEXPERT_H
 #define demuxusb_USBMUXINTERFACEEXPERT_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 #include "InterfaceExpert.h"
 #include "MuxStream.h"
 

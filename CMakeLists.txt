@@ -12,11 +12,11 @@ pkg_check_modules(PLIST REQUIRED IMPORTED_TARGET libplist-2.0)
 
 find_package(Boost REQUIRED COMPONENTS container filesystem iostreams unit_test_framework)
 
-add_executable(demuxusb src/main.cpp src/InputFile.cpp src/InputFile.h
-        src/Device.cpp src/Device.h src/MuxStream.cpp src/MuxStream.h src/PcapNGInputFile.cpp
-        src/PcapNGInputFile.h src/InterfaceExpert.cpp src/InterfaceExpert.h src/DFUInterfaceExpert.cpp
-        src/DFUInterfaceExpert.h src/RecoveryInterfaceExpert.cpp src/RecoveryInterfaceExpert.h
-        src/USBMUXInterfaceExpert.cpp src/USBMUXInterfaceExpert.h src/USBDescriptor.cpp src/USBDescriptor.h)
+add_executable(demuxusb src/main.cpp src/file/InputFile.cpp src/file/InputFile.h
+        src/usb/Device.cpp src/usb/Device.h src/protocol/MuxStream.cpp src/protocol/MuxStream.h src/file/PcapNGInputFile.cpp
+        src/file/PcapNGInputFile.h src/protocol/InterfaceExpert.cpp src/protocol/InterfaceExpert.h src/protocol/DFUInterfaceExpert.cpp
+        src/protocol/DFUInterfaceExpert.h src/protocol/RecoveryInterfaceExpert.cpp src/protocol/RecoveryInterfaceExpert.h
+        src/protocol/USBMUXInterfaceExpert.cpp src/protocol/USBMUXInterfaceExpert.h src/usb/USBDescriptor.cpp src/usb/USBDescriptor.h)
 
 target_include_directories(demuxusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_precompile_headers(demuxusb PRIVATE src/demuxusb.hpp)

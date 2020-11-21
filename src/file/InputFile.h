@@ -5,15 +5,15 @@
 #ifndef demuxusb_CINPUTFILE_H
 #define demuxusb_CINPUTFILE_H
 
-#include "demuxusb.hpp"
-#include "Device.h"
+#include "../demuxusb.hpp"
+#include "../usb/Device.h"
 
 
 namespace demuxusb {
 
     class DeviceHandle {
     public:
-        DeviceHandle(uint64_t id) {
+        explicit DeviceHandle(uint64_t id) {
             this->m_device = std::make_unique<Device>(id);
         }
 

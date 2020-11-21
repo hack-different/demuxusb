@@ -4,12 +4,22 @@
 
 
 #include "Device.h"
-#include "DFUInterfaceExpert.h"
-#include "RecoveryInterfaceExpert.h"
-#include "USBMUXInterfaceExpert.h"
+#include "../protocol/DFUInterfaceExpert.h"
+#include "../protocol/RecoveryInterfaceExpert.h"
+#include "../protocol/USBMUXInterfaceExpert.h"
 
 namespace demuxusb {
+    void Device::processBulkPacketIn(uint8_t endpoint, byte_array data) {
+        this->m_packetCount++;
+        this->m_byteCount += data.second;
+    }
 
+    void Device::processBulkPacketOut(uint8_t endpoint, byte_array data) {
+        this->m_packetCount++;
+        this->m_byteCount += data.second;
+
+
+    }
 
     void Device::processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data) {
         this->m_controlPacketCount++;
@@ -113,6 +123,12 @@ namespace demuxusb {
             if (setup.bmRequestType == 0x00 && setup.bRequest == 0x09) {
                 this->m_currentConfiguration = setup.wValue;
                 std::cout << "Device " << std::hex << this->getIdentifier() << " set configuration to " << std::dec << (int)this->m_currentConfiguration << std::endl;
+
+
+            } else if (setup.bmRequestType == 0x21) {
+                assert(setup.wLength == data.second);
+
+
             }
         }
     }

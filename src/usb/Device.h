@@ -5,8 +5,8 @@
 #ifndef demuxusb_DEVICE_H
 #define demuxusb_DEVICE_H
 
-#include "demuxusb.hpp"
-#include "InterfaceExpert.h"
+#include "../demuxusb.hpp"
+#include "../protocol/InterfaceExpert.h"
 
 namespace demuxusb {
 
@@ -68,15 +68,9 @@ namespace demuxusb {
 
         void processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data);
 
-        void processBulkPacketIn(uint8_t endpoint, byte_array data) {
-            this->m_packetCount++;
-            this->m_byteCount += data.second;
-        }
+        void processBulkPacketIn(uint8_t endpoint, byte_array data);
 
-        void processBulkPacketOut(uint8_t endpoint, byte_array data) {
-            this->m_packetCount++;
-            this->m_byteCount += data.second;
-        }
+        void processBulkPacketOut(uint8_t endpoint, byte_array data);
 
         [[nodiscard]] uint64_t getPacketCount() const { return this->m_packetCount; }
 

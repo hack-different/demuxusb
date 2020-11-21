@@ -5,7 +5,7 @@
 #ifndef demuxusb_PCAPNGINPUTFILE_H
 #define demuxusb_PCAPNGINPUTFILE_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 #include "InputFile.h"
 
 #include <utility>

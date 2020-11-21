@@ -5,7 +5,7 @@
 #ifndef demuxusb_USBDESCRIPTOR_H
 #define demuxusb_USBDESCRIPTOR_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 
 class USBDescriptor {
 

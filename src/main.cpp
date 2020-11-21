@@ -1,8 +1,8 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <memory>
-#include "InputFile.h"
-#include "PcapNGInputFile.h"
+#include "file/InputFile.h"
+#include "file/PcapNGInputFile.h"
 
 
 using namespace demuxusb;

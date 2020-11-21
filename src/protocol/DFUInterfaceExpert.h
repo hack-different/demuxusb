@@ -5,7 +5,7 @@
 #ifndef demuxusb_DFUINTERFACEEXPERT_H
 #define demuxusb_DFUINTERFACEEXPERT_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 #include "InterfaceExpert.h"
 
 class DFUInterfaceExpert : public InterfaceExpert {

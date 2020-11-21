@@ -5,7 +5,7 @@
 #ifndef demuxusb_RECOVERYINTERFACEEXPERT_H
 #define demuxusb_RECOVERYINTERFACEEXPERT_H
 
-#include "demuxusb.hpp"
+#include "../demuxusb.hpp"
 #include "InterfaceExpert.h"
 
 class RecoveryInterfaceExpert : public InterfaceExpert {
