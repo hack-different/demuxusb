@@ -1,11 +1,6 @@
 #ifndef _demuxusb_H
 #define _demuxusb_H
 
-// External dependencies for formats
-#include <pcapng.h>
-#include <usb.h>
-#include <usbmux.h>
-
 // STL
 #include <set>
 #include <map>
@@ -21,6 +16,7 @@
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/format.hpp>
 
 namespace fs = boost::filesystem;
 namespace io = boost::iostreams;

@@ -54,28 +54,17 @@ namespace demuxusb {
                             // Attach experts
                             for (auto& interface : config.interfaces) {
                                 if (this->isAppleDFU()) {
-                                    interface.expert = std::make_unique<DFUInterfaceExpert>();
-
-                                    std::cout << "Added DFUInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting<< std::endl;
-
-                                } else if (this->isAppleRecovery()) {
-                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>();
-
-                                    std::cout << "Added RecoveryInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting << std::endl;
-
-                                } else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
+                                    interface.expert = std::make_unique<DFUInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                                }
+                                else if (this->isAppleRecovery())
+                                {
+                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                                }
+                                else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
                                     interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
-                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2) {
-
-                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>();
-
-                                    std::cout << "Added USBMUXInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting << std::endl;
+                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2)
+                                {
+                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
                                 }
                             }
 
@@ -131,6 +120,20 @@ namespace demuxusb {
 
             }
         }
+    }
+
+    std::vector<std::shared_ptr<InterfaceExpert>> Device::getExperts() {
+        auto result = std::vector<std::shared_ptr<InterfaceExpert>>();
+
+        for (const auto& configuration : this->m_configurations) {
+            for (const auto& interface : configuration.interfaces) {
+                if (!interface.expert->isEmpty()) {
+                    result.push_back(interface.expert);
+                }
+            }
+        }
+
+        return result;
     }
 
     void usb_configuration::parse(usb_configuration &config, std::byte *data, size_t size) {

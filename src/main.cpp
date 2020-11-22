@@ -29,6 +29,13 @@ int main(int argc, const char *argv[]) {
                    device->getByteCount() << L" bytes. (control " << device->getControlPacketCount() << L" packets, " <<
                    device->getControlByteCount() << L" bytes)." << std::endl;
 
+
+        std::wcout << L"  Interface Experts:\n";
+        for (const auto& expert : device->getExperts()) {
+            if (!expert->isEmpty()) {
+                std::cout << expert->toString() << std::endl;
+            }
+        }
     }
 
     return 0;
