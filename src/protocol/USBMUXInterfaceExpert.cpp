@@ -6,13 +6,13 @@
 
 std::string USBMUXInterfaceExpert::toString() {
     auto format = boost::format("USBMUXInterfaceExpert (config=%1%, int=%2%):\n");
-    auto stream_format = boost::format("-\tStream %1%\t: from host %2% to device %3% (%4% bytes)\n");
+    auto stream_format = boost::format("-\tStream %1%\t: from host %2% to device %3% (in %4%, out %5% bytes)\n");
 
-    std::string result = (format % this->m_configuration % this->m_interface).str();
+    std::string result = (format % (uint32_t)this->m_configuration % (uint32_t)this->m_interface).str();
 
     for (auto& stream : this->m_streams) {
         result.append((stream_format % stream.first % stream.second->getHostPort() %
-        stream.second->getDevicePort() % stream.second->getBytes()).str());
+        stream.second->getDevicePort() % stream.second->getBytesIn() % stream.second->getBytesOut()).str());
     }
 
     return result;
@@ -27,6 +27,83 @@ uint64_t USBMUXInterfaceExpert::beginStream(uint16_t host, uint16_t device) {
     auto index = this->m_streamIndex[stream_port];
     index++;
     this->m_streamIndex[stream_port] = index;
+
+    return STREAM_ID(host, device, index);
+}
+
+void USBMUXInterfaceExpert::processBulkOut(byte_array data) {
+    // Check that we at least have the basic header
+    if (data.second >= sizeof(mux_header)) {
+        auto* header = (mux_header*)data.first;
+
+
+        switch (ntohl(header->protocol)) {
+            case MUX_PROTO_TCP: {
+                assert(ntohl(header->magic) == USBMUX_MAGIC_OUT);
+                assert(data.second >= (sizeof(mux_header) + sizeof(tcphdr)));
+                auto* tcp_header = (tcphdr*)(data.first + sizeof(mux_header));
+
+                auto source = ntohs(tcp_header->source);
+                auto destination = ntohs(tcp_header->dest);
+                auto flags = ntohs(tcp_header->flags);
+
+                // Magic evaluation for SYN on out (therefore connect)
+                if (flags & USB_TCP_FLAG_SYN) {
+                    auto stream_id = this->beginStream(source, destination);
+                    this->m_streams[stream_id] = std::make_shared<MuxStream>(source, destination);
+                }
+                else {
+                    auto stream_id = this->getStreamId(source, destination);
+                    auto stream = this->m_streams[stream_id];
+
+                    assert(stream != nullptr);
+                    auto byte_length = data.second - (sizeof(mux_header) + sizeof(tcphdr));
+
+                    stream->sendBytes(byte_length, data.first + byte_length);
+                }
+            }
+                break;
+            default:
+                break;
+        }
+
+
+    }
+}
+
+void USBMUXInterfaceExpert::processBulkIn(byte_array data) {
+    // Check that we at least have the basic header
+    if (data.second >= sizeof(mux_header)) {
+        auto* header = (mux_header*)data.first;
+
+        switch (ntohl(header->protocol)) {
+            case MUX_PROTO_TCP: {
+                assert(ntohl(header->magic) == USBMUX_MAGIC_IN);
+                assert(data.second >= (sizeof(mux_header) + sizeof(tcphdr)));
+                auto *tcp_header = (tcphdr *) (data.first + sizeof(mux_header));
+
+                auto source = ntohs(tcp_header->source);
+                auto destination = ntohs(tcp_header->dest);
+                auto flags = ntohs(tcp_header->flags);
+
+                auto stream_id = this->getStreamId(destination, source);
+                auto stream = this->m_streams[stream_id];
+
+                assert(stream != nullptr);
+                auto byte_length = data.second - (sizeof(mux_header) + sizeof(tcphdr));
+
+                stream->receiveBytes(byte_length, data.first + byte_length);
+            }
+                break;
+        }
+
+    }
+}
+
+uint64_t USBMUXInterfaceExpert::getStreamId(uint16_t host, uint16_t device) {
+    uint32_t stream_port = STREAM_PORT(host, device);
+
+    auto index = this->m_streamIndex[stream_port];
 
     return STREAM_ID(host, device, index);
 }

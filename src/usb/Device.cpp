@@ -10,15 +10,26 @@
 
 namespace demuxusb {
     void Device::processBulkPacketIn(uint8_t endpoint, byte_array data) {
+        endpoint |= 0x80U;
         this->m_packetCount++;
         this->m_byteCount += data.second;
+
+        auto expert = this->getExpertForEndpoint(endpoint);
+
+        if (expert != nullptr) {
+            expert->processBulkIn(data);
+        }
     }
 
     void Device::processBulkPacketOut(uint8_t endpoint, byte_array data) {
         this->m_packetCount++;
         this->m_byteCount += data.second;
 
+        auto expert = this->getExpertForEndpoint(endpoint);
 
+        if (expert != nullptr) {
+            expert->processBulkOut(data);
+        }
     }
 
     void Device::processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data) {
@@ -43,6 +54,7 @@ namespace demuxusb {
                         this->m_configurations = std::vector<usb_configuration>(
                                 this->m_deviceDescriptor.bNumConfigurations);
                         break;
+
                     case USB_DT_CONFIG: {
                             // We only want to handle the full descriptor when returned
                             auto *configDescriptor = (usb_config_descriptor *) data.first;
@@ -71,6 +83,7 @@ namespace demuxusb {
                             this->m_configurations[configurationIndex] = config;
                         }
                         break;
+
                     case USB_DT_STRING: {
                             auto length = *data.first;
                             auto type = *(data.first + 1);
@@ -85,6 +98,7 @@ namespace demuxusb {
                             this->m_strings[descriptorIndex] = std::wstring{std::begin(stringValue), std::end(stringValue)};
                         }
                         break;
+
                     case USB_DT_BOS: {
                         assert(header->bLength >= sizeof(usb_bos_descriptor));
                         auto* bos_descriptor = (usb_bos_descriptor*)data.first;
@@ -97,11 +111,13 @@ namespace demuxusb {
                         memcpy(bos.data.data(), bos_data, bos_data_size);
                         break;
                     }
+
                     default:
                         std::cerr << "Unknown descriptor type " << std::hex << descriptorType << std::endl;
                 }
             }
         }
+
     }
 
     void Device::processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data) {
@@ -117,7 +133,12 @@ namespace demuxusb {
             } else if (setup.bmRequestType == 0x21) {
                 assert(setup.wLength == data.second);
 
+                const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+                auto expert = config.interfaces[0].expert;
 
+                if (expert != nullptr) {
+                    expert->processControlOut(data);
+                }
             }
         }
     }
@@ -127,13 +148,27 @@ namespace demuxusb {
 
         for (const auto& configuration : this->m_configurations) {
             for (const auto& interface : configuration.interfaces) {
-                if (!interface.expert->isEmpty()) {
+                if (interface.expert != nullptr) {
                     result.push_back(interface.expert);
                 }
             }
         }
 
         return result;
+    }
+
+    std::shared_ptr<InterfaceExpert> Device::getExpertForEndpoint(uint8_t endpoint) {
+        const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+
+        for (const auto& interface : config.interfaces) {
+            for (const auto& interface_endpoint : interface.endpoints) {
+                if (interface_endpoint.bEndpointAddress == endpoint) {
+                    return interface.expert;
+                }
+            }
+        }
+
+        return nullptr;
     }
 
     void usb_configuration::parse(usb_configuration &config, std::byte *data, size_t size) {
