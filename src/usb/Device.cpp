@@ -127,8 +127,6 @@ namespace demuxusb {
         if (USB_ENDPOINT_ID(endpoint) == 0) {
             if (setup.bmRequestType == 0x00 && setup.bRequest == 0x09) {
                 this->m_currentConfiguration = setup.wValue;
-                std::cout << "Device " << std::hex << this->getIdentifier() << " set configuration to " << std::dec << (int)this->m_currentConfiguration << std::endl;
-
 
             } else if (setup.bmRequestType == 0x21) {
                 assert(setup.wLength == data.second);

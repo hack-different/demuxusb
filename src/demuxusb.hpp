@@ -18,6 +18,9 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/format.hpp>
 
+
+#include <plist/plist++.h>
+
 namespace fs = boost::filesystem;
 namespace io = boost::iostreams;
 

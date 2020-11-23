@@ -5,14 +5,15 @@
 #include "USBMUXInterfaceExpert.h"
 
 std::string USBMUXInterfaceExpert::toString() {
-    auto format = boost::format("USBMUXInterfaceExpert (config=%1%, int=%2%):\n");
-    auto stream_format = boost::format("-\tStream %1%\t: from host %2% to device %3% (in %4%, out %5% bytes)\n");
+    auto format = boost::format("USBMUXInterfaceExpert (configuration=%1%, interface=%2%):\n");
+    auto stream_format = boost::format("\t-\t%1$x\t: %2% -> %3% (%4% transactions, in %5%, out %6% bytes)\n");
 
     std::string result = (format % (uint32_t)this->m_configuration % (uint32_t)this->m_interface).str();
 
     for (auto& stream : this->m_streams) {
         result.append((stream_format % stream.first % stream.second->getHostPort() %
-        stream.second->getDevicePort() % stream.second->getBytesIn() % stream.second->getBytesOut()).str());
+        stream.second->getDevicePort() % stream.second->getTransactionCount() % stream.second->getBytesIn() %
+        stream.second->getBytesOut()).str());
     }
 
     return result;
