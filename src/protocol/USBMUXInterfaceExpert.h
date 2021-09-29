@@ -8,13 +8,14 @@
 #include "../demuxusb.hpp"
 #include "InterfaceExpert.h"
 #include "MuxStream.h"
+#include "../ext/usbmux.h"
 
 class USBMUXInterfaceExpert : public InterfaceExpert {
 public:
 
 
 private:
-    std::map<uint8_t, std::shared_ptr<MuxStream>> m_streams;
+    std::map<uint64_t, std::shared_ptr<MuxStream>> m_streams;
 };
 
 
