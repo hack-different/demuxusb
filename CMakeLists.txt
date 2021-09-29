@@ -18,7 +18,7 @@ add_executable(demuxusb src/main.cpp src/file/InputFile.cpp src/file/InputFile.h
         src/protocol/DFUInterfaceExpert.h src/protocol/RecoveryInterfaceExpert.cpp src/protocol/RecoveryInterfaceExpert.h
         src/protocol/USBMUXInterfaceExpert.cpp src/protocol/USBMUXInterfaceExpert.h src/usb/USBDescriptor.cpp src/usb/USBDescriptor.h)
 
-target_include_directories(demuxusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext)
+target_include_directories(demuxusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_precompile_headers(demuxusb PRIVATE src/demuxusb.hpp)
 target_link_libraries(demuxusb PUBLIC PkgConfig::PLIST Boost::container
         Boost::iostreams Boost::filesystem)

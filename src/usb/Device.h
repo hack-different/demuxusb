@@ -6,7 +6,10 @@
 #define demuxusb_DEVICE_H
 
 #include "../demuxusb.hpp"
+#include "usb.h"
+#include "pcapng.h"
 #include "../protocol/InterfaceExpert.h"
+
 
 namespace demuxusb {
 
@@ -80,7 +83,11 @@ namespace demuxusb {
 
         [[nodiscard]] uint64_t getControlByteCount() const { return this->m_controlByteCount; }
 
+        std::vector<std::shared_ptr<InterfaceExpert>> getExperts();
+
     protected:
+        std::shared_ptr<InterfaceExpert> getExpertForEndpoint(uint8_t endpoint);
+
         uint64_t m_device;
         uint16_t m_vendorId;
         uint16_t m_productId;
@@ -98,7 +105,7 @@ namespace demuxusb {
 
         usb_setup_t m_controlSetup{};
 
-        std::map<uint8_t, std::shared_ptr<InterfaceExpert>> m_interfaces;
+        std::map<uint32_t, std::shared_ptr<InterfaceExpert>> m_interfaces{};
     };
 }
 

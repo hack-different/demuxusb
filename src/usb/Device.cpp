@@ -10,15 +10,26 @@
 
 namespace demuxusb {
     void Device::processBulkPacketIn(uint8_t endpoint, byte_array data) {
+        endpoint |= 0x80U;
         this->m_packetCount++;
         this->m_byteCount += data.second;
+
+        auto expert = this->getExpertForEndpoint(endpoint);
+
+        if (expert != nullptr) {
+            expert->processBulkIn(data);
+        }
     }
 
     void Device::processBulkPacketOut(uint8_t endpoint, byte_array data) {
         this->m_packetCount++;
         this->m_byteCount += data.second;
 
+        auto expert = this->getExpertForEndpoint(endpoint);
 
+        if (expert != nullptr) {
+            expert->processBulkOut(data);
+        }
     }
 
     void Device::processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data) {
@@ -43,6 +54,7 @@ namespace demuxusb {
                         this->m_configurations = std::vector<usb_configuration>(
                                 this->m_deviceDescriptor.bNumConfigurations);
                         break;
+
                     case USB_DT_CONFIG: {
                             // We only want to handle the full descriptor when returned
                             auto *configDescriptor = (usb_config_descriptor *) data.first;
@@ -54,34 +66,24 @@ namespace demuxusb {
                             // Attach experts
                             for (auto& interface : config.interfaces) {
                                 if (this->isAppleDFU()) {
-                                    interface.expert = std::make_unique<DFUInterfaceExpert>();
-
-                                    std::cout << "Added DFUInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting<< std::endl;
-
-                                } else if (this->isAppleRecovery()) {
-                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>();
-
-                                    std::cout << "Added RecoveryInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting << std::endl;
-
-                                } else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
+                                    interface.expert = std::make_unique<DFUInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                                }
+                                else if (this->isAppleRecovery())
+                                {
+                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                                }
+                                else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
                                     interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
-                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2) {
-
-                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>();
-
-                                    std::cout << "Added USBMUXInterfaceExpert for " << std::hex << this->getIdentifier() <<
-                                                 " on interface " << std::dec << (int)interface.interface.bInterfaceNumber << " : " <<
-                                                 (int)interface.interface.bAlternateSetting << std::endl;
+                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2)
+                                {
+                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
                                 }
                             }
 
                             this->m_configurations[configurationIndex] = config;
                         }
                         break;
+
                     case USB_DT_STRING: {
                             auto length = *data.first;
                             auto type = *(data.first + 1);
@@ -96,6 +98,7 @@ namespace demuxusb {
                             this->m_strings[descriptorIndex] = std::wstring{std::begin(stringValue), std::end(stringValue)};
                         }
                         break;
+
                     case USB_DT_BOS: {
                         assert(header->bLength >= sizeof(usb_bos_descriptor));
                         auto* bos_descriptor = (usb_bos_descriptor*)data.first;
@@ -108,11 +111,13 @@ namespace demuxusb {
                         memcpy(bos.data.data(), bos_data, bos_data_size);
                         break;
                     }
+
                     default:
                         std::cerr << "Unknown descriptor type " << std::hex << descriptorType << std::endl;
                 }
             }
         }
+
     }
 
     void Device::processControlPacketOut(uint8_t endpoint, usb_setup_t setup, byte_array data) {
@@ -122,15 +127,46 @@ namespace demuxusb {
         if (USB_ENDPOINT_ID(endpoint) == 0) {
             if (setup.bmRequestType == 0x00 && setup.bRequest == 0x09) {
                 this->m_currentConfiguration = setup.wValue;
-                std::cout << "Device " << std::hex << this->getIdentifier() << " set configuration to " << std::dec << (int)this->m_currentConfiguration << std::endl;
-
 
             } else if (setup.bmRequestType == 0x21) {
                 assert(setup.wLength == data.second);
 
+                const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+                auto expert = config.interfaces[0].expert;
 
+                if (expert != nullptr) {
+                    expert->processControlOut(data);
+                }
             }
         }
+    }
+
+    std::vector<std::shared_ptr<InterfaceExpert>> Device::getExperts() {
+        auto result = std::vector<std::shared_ptr<InterfaceExpert>>();
+
+        for (const auto& configuration : this->m_configurations) {
+            for (const auto& interface : configuration.interfaces) {
+                if (interface.expert != nullptr) {
+                    result.push_back(interface.expert);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    std::shared_ptr<InterfaceExpert> Device::getExpertForEndpoint(uint8_t endpoint) {
+        const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+
+        for (const auto& interface : config.interfaces) {
+            for (const auto& interface_endpoint : interface.endpoints) {
+                if (interface_endpoint.bEndpointAddress == endpoint) {
+                    return interface.expert;
+                }
+            }
+        }
+
+        return nullptr;
     }
 
     void usb_configuration::parse(usb_configuration &config, std::byte *data, size_t size) {

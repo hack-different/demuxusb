@@ -25,6 +25,61 @@
 
 #include <stdint.h>
 
+#define USBMUX_MAGIC_IN 0xFACEFACE
+#define USBMUX_MAGIC_OUT 0xFEEDFACE
+
+#define USB_TCP_FLAG_SYN 0x02U
+
+enum mux_protocol {
+    MUX_PROTO_VERSION = 0,
+    MUX_PROTO_CONTROL = 1,
+    MUX_PROTO_SETUP = 2,
+    MUX_PROTO_TCP = 6,
+};
+
+enum mux_dev_state {
+    MUXDEV_INIT,	// sent version packet
+    MUXDEV_ACTIVE,	// received version packet, active
+    MUXDEV_DEAD		// dead
+} __attribute__((__packed__));
+
+enum mux_conn_state {
+    CONN_CONNECTING,	// SYN
+    CONN_CONNECTED,		// SYN/SYNACK/ACK -> active
+    CONN_REFUSED,		// RST received during SYN
+    CONN_DYING,			// RST received
+    CONN_DEAD			// being freed; used to prevent infinite recursion between client<->device freeing
+} __attribute__((__packed__));
+
+struct mux_header
+{
+    uint32_t protocol;
+    uint32_t length;
+    uint32_t magic;
+    uint16_t tx_seq;
+    uint16_t rx_seq;
+} __attribute__((__packed__));
+
+struct version_header
+{
+    uint32_t major;
+    uint32_t minor;
+    uint32_t padding;
+};
+
+
+struct tcphdr {
+    uint16_t   source;
+    uint16_t   dest;
+    uint32_t   seq;
+    uint32_t   ack_seq;
+    uint16_t   flags;
+    uint16_t   window;
+    uint16_t   check;
+    uint16_t   urg_ptr;
+};
+
+
 #define USBMUXD_PROTOCOL_VERSION 0
 
 #if defined(WIN32) || defined(__CYGWIN__)

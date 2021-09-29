@@ -8,8 +8,17 @@
 #include "../demuxusb.hpp"
 #include "InterfaceExpert.h"
 
-class RecoveryInterfaceExpert : public InterfaceExpert {
+struct RecoveryPayload {
 
+};
+
+class RecoveryInterfaceExpert : public InterfaceExpert {
+public:
+    RecoveryInterfaceExpert(uint8_t configuration, uint8_t interface) : InterfaceExpert(configuration, interface) {};
+    std::string toString() override;
+    bool isEmpty() override;
+protected:
+    std::vector<RecoveryPayload> m_payloads{};
 };
 
 

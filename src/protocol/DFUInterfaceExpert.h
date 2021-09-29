@@ -9,6 +9,10 @@
 #include "InterfaceExpert.h"
 
 class DFUInterfaceExpert : public InterfaceExpert {
+public:
+    DFUInterfaceExpert(uint8_t configuration, uint8_t interface) : InterfaceExpert(configuration, interface) {};
+    std::string toString() override;
+protected:
 
 };
 
