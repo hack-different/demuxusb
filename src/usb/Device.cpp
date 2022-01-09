@@ -41,7 +41,7 @@ namespace demuxusb {
                 // We are a descriptor read
                 auto descriptorType = setup.wValue >> 8U;
                 auto descriptorIndex = setup.wValue & 0xFFU;
-                auto* header = (usb_descriptor_header*)data.first;
+                auto *header = (usb_descriptor_header *) data.first;
                 assert(header->bDescriptorType == descriptorType);
 
                 switch (descriptorType) {
@@ -56,56 +56,56 @@ namespace demuxusb {
                         break;
 
                     case USB_DT_CONFIG: {
-                            // We only want to handle the full descriptor when returned
-                            auto *configDescriptor = (usb_config_descriptor *) data.first;
-                            auto configurationIndex = configDescriptor->bConfigurationValue - 1;
-                            if (configDescriptor->wTotalLength != data.second) { break; }
-                            auto config = usb_configuration{};
-                            usb_configuration::parse(config, data.first, data.second);
+                        // We only want to handle the full descriptor when returned
+                        auto *configDescriptor = (usb_config_descriptor *) data.first;
+                        auto configurationIndex = configDescriptor->bConfigurationValue - 1;
+                        if (configDescriptor->wTotalLength != data.second) { break; }
+                        auto config = usb_configuration{};
+                        usb_configuration::parse(config, data.first, data.second);
 
-                            // Attach experts
-                            for (auto& interface : config.interfaces) {
-                                if (this->isAppleDFU()) {
-                                    interface.expert = std::make_unique<DFUInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
-                                }
-                                else if (this->isAppleRecovery())
-                                {
-                                    interface.expert = std::make_unique<RecoveryInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
-                                }
-                                else if (this->isApple() && interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
-                                    interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
-                                    interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2)
-                                {
-                                    interface.expert = std::make_unique<USBMUXInterfaceExpert>(configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
-                                }
+                        // Attach experts
+                        for (auto &interface: config.interfaces) {
+                            if (this->isAppleDFU()) {
+                                interface.expert = std::make_unique<DFUInterfaceExpert>(
+                                        configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                            } else if (this->isAppleRecovery()) {
+                                interface.expert = std::make_unique<RecoveryInterfaceExpert>(
+                                        configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
+                            } else if (this->isApple() &&
+                                       interface.interface.bInterfaceClass == USB_CLASS_APPLICATION_SPECIFIC &&
+                                       interface.interface.bInterfaceSubClass == APPLE_SUBCLASS_USBMUX &&
+                                       interface.interface.bInterfaceProtocol == APPLE_PROTOCOL_USBMUX2) {
+                                interface.expert = std::make_unique<USBMUXInterfaceExpert>(
+                                        configDescriptor->bConfigurationValue, interface.interface.bInterfaceNumber);
                             }
-
-                            this->m_configurations[configurationIndex] = config;
                         }
+
+                        this->m_configurations[configurationIndex] = config;
+                    }
                         break;
 
                     case USB_DT_STRING: {
-                            auto length = *data.first;
-                            auto type = *(data.first + 1);
-                            assert(static_cast<int>(type) == USB_DT_STRING);
-                            if (static_cast<unsigned long>(length) != data.second) { break; }
+                        auto length = *data.first;
+                        auto type = *(data.first + 1);
+                        assert(static_cast<int>(type) == USB_DT_STRING);
+                        if (static_cast<unsigned long>(length) != data.second) { break; }
 
-                            auto *stringAddress = (char16_t *) (data.first + 2);
-                            auto stringLength = (data.second - 2) / 2;
+                        auto *stringAddress = (char16_t *) (data.first + 2);
+                        auto stringLength = (data.second - 2) / 2;
 
-                            auto stringValue = std::u16string(stringAddress, stringLength);
+                        auto stringValue = std::u16string(stringAddress, stringLength);
 
-                            this->m_strings[descriptorIndex] = std::wstring{std::begin(stringValue), std::end(stringValue)};
-                        }
+                        this->m_strings[descriptorIndex] = std::wstring{std::begin(stringValue), std::end(stringValue)};
+                    }
                         break;
 
                     case USB_DT_BOS: {
                         assert(header->bLength >= sizeof(usb_bos_descriptor));
-                        auto* bos_descriptor = (usb_bos_descriptor*)data.first;
+                        auto *bos_descriptor = (usb_bos_descriptor *) data.first;
                         if (header->bLength != bos_descriptor->wTotalLength) { break; }
                         struct bos_descriptor bos{};
                         memcpy(&bos.descriptor, data.first, sizeof(usb_bos_descriptor));
-                        std::byte* bos_data = data.first + sizeof(usb_bos_descriptor);
+                        std::byte *bos_data = data.first + sizeof(usb_bos_descriptor);
                         auto bos_data_size = bos_descriptor->wTotalLength - sizeof(usb_bos_descriptor);
                         bos.data.resize(bos_data_size);
                         memcpy(bos.data.data(), bos_data, bos_data_size);
@@ -131,7 +131,7 @@ namespace demuxusb {
             } else if (setup.bmRequestType == 0x21) {
                 assert(setup.wLength == data.second);
 
-                const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+                const auto &config = this->m_configurations[this->m_currentConfiguration - 1];
                 auto expert = config.interfaces[0].expert;
 
                 if (expert != nullptr) {
@@ -144,8 +144,8 @@ namespace demuxusb {
     std::vector<std::shared_ptr<InterfaceExpert>> Device::getExperts() {
         auto result = std::vector<std::shared_ptr<InterfaceExpert>>();
 
-        for (const auto& configuration : this->m_configurations) {
-            for (const auto& interface : configuration.interfaces) {
+        for (const auto &configuration: this->m_configurations) {
+            for (const auto &interface: configuration.interfaces) {
                 if (interface.expert != nullptr) {
                     result.push_back(interface.expert);
                 }
@@ -156,10 +156,10 @@ namespace demuxusb {
     }
 
     std::shared_ptr<InterfaceExpert> Device::getExpertForEndpoint(uint8_t endpoint) {
-        const auto& config = this->m_configurations[this->m_currentConfiguration - 1];
+        const auto &config = this->m_configurations[this->m_currentConfiguration - 1];
 
-        for (const auto& interface : config.interfaces) {
-            for (const auto& interface_endpoint : interface.endpoints) {
+        for (const auto &interface: config.interfaces) {
+            for (const auto &interface_endpoint: interface.endpoints) {
                 if (interface_endpoint.bEndpointAddress == endpoint) {
                     return interface.expert;
                 }
@@ -195,7 +195,8 @@ namespace demuxusb {
                     config.interfaces[interface.interface.bInterfaceNumber] = interface;
                     break;
                 case USB_DT_ENDPOINT: {
-                    assert((header->bLength == USB_DT_ENDPOINT_SIZE) ||  (header->bLength == sizeof(usb_endpoint_descriptor)));
+                    assert((header->bLength == USB_DT_ENDPOINT_SIZE) ||
+                           (header->bLength == sizeof(usb_endpoint_descriptor)));
                     usb_endpoint_descriptor endpoint{};
                     memcpy(&endpoint, header, header->bLength);
                     interface.endpoints.push_back(endpoint);
@@ -203,7 +204,8 @@ namespace demuxusb {
                     break;
                 }
                 default:
-                    std::cerr << "Unknown configuration descriptor type " << std::hex << (int)header->bDescriptorType << std::endl;
+                    std::cerr << "Unknown configuration descriptor type " << std::hex << (int) header->bDescriptorType
+                              << std::endl;
             }
 
             data += header->bLength;

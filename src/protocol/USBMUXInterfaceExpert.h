@@ -17,13 +17,20 @@
 class USBMUXInterfaceExpert : public InterfaceExpert {
 public:
     USBMUXInterfaceExpert(uint8_t configuration, uint8_t interface) : InterfaceExpert(configuration, interface) {};
+
     std::string toString() override;
+
     bool isEmpty() override { return this->m_streams.empty(); }
+
     void processBulkOut(byte_array data) override;
+
     void processBulkIn(byte_array data) override;
+
 protected:
     uint64_t beginStream(uint16_t host, uint16_t device);
+
     uint64_t getStreamId(uint16_t host, uint16_t device);
+
 private:
     std::map<uint32_t, uint32_t> m_streamIndex{};
     std::map<uint64_t, std::shared_ptr<MuxStream>> m_streams{};

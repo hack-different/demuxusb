@@ -29,7 +29,7 @@ namespace demuxusb {
         usb_dfu_functional_descriptor dfu_descriptor;
         std::vector<usb_interface> interfaces{};
 
-        static void parse(usb_configuration& config, std::byte *data, size_t size);
+        static void parse(usb_configuration &config, std::byte *data, size_t size);
     };
 
     // The device class is a state machine that reconstructs the devices properties by composing the control endpoint
@@ -42,7 +42,12 @@ namespace demuxusb {
         [[nodiscard]] uint64_t getIdentifier() const { return this->m_device; }
 
         [[nodiscard]] bool isApple() const { return this->m_deviceDescriptor.idVendor == APPLE_VID; }
-        [[nodiscard]] bool isAppleDFU() const { return this->m_deviceDescriptor.idVendor == APPLE_VID && this->m_deviceDescriptor.idProduct == IRECV_K_DFU_MODE; }
+
+        [[nodiscard]] bool isAppleDFU() const {
+            return this->m_deviceDescriptor.idVendor == APPLE_VID &&
+                   this->m_deviceDescriptor.idProduct == IRECV_K_DFU_MODE;
+        }
+
         [[nodiscard]] bool isAppleRecovery() const {
             if (this->m_deviceDescriptor.idVendor == APPLE_VID) {
                 return ((this->m_deviceDescriptor.idProduct == IRECV_K_RECOVERY_MODE_1) ||

@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.17)
 project(demuxusb)
 enable_testing()
 
-
 find_package(PkgConfig REQUIRED)
 
 

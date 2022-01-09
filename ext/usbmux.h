@@ -38,21 +38,20 @@ enum mux_protocol {
 };
 
 enum mux_dev_state {
-    MUXDEV_INIT,	// sent version packet
-    MUXDEV_ACTIVE,	// received version packet, active
-    MUXDEV_DEAD		// dead
+    MUXDEV_INIT,    // sent version packet
+    MUXDEV_ACTIVE,    // received version packet, active
+    MUXDEV_DEAD        // dead
 } __attribute__((__packed__));
 
 enum mux_conn_state {
-    CONN_CONNECTING,	// SYN
-    CONN_CONNECTED,		// SYN/SYNACK/ACK -> active
-    CONN_REFUSED,		// RST received during SYN
-    CONN_DYING,			// RST received
-    CONN_DEAD			// being freed; used to prevent infinite recursion between client<->device freeing
+    CONN_CONNECTING,    // SYN
+    CONN_CONNECTED,        // SYN/SYNACK/ACK -> active
+    CONN_REFUSED,        // RST received during SYN
+    CONN_DYING,            // RST received
+    CONN_DEAD            // being freed; used to prevent infinite recursion between client<->device freeing
 } __attribute__((__packed__));
 
-struct mux_header
-{
+struct mux_header {
     uint32_t protocol;
     uint32_t length;
     uint32_t magic;
@@ -60,8 +59,7 @@ struct mux_header
     uint16_t rx_seq;
 } __attribute__((__packed__));
 
-struct version_header
-{
+struct version_header {
     uint32_t major;
     uint32_t minor;
     uint32_t padding;
@@ -69,14 +67,14 @@ struct version_header
 
 
 struct tcphdr {
-    uint16_t   source;
-    uint16_t   dest;
-    uint32_t   seq;
-    uint32_t   ack_seq;
-    uint16_t   flags;
-    uint16_t   window;
-    uint16_t   check;
-    uint16_t   urg_ptr;
+    uint16_t source;
+    uint16_t dest;
+    uint32_t seq;
+    uint32_t ack_seq;
+    uint16_t flags;
+    uint16_t window;
+    uint16_t check;
+    uint16_t urg_ptr;
 };
 
 
