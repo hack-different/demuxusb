@@ -1,0 +1,13 @@
+//
+// Created by Rick Mark on 2/28/26.
+//
+
+#ifndef DEMUXUSB_TOTALPHASECSVINPUTFILE_H
+#define DEMUXUSB_TOTALPHASECSVINPUTFILE_H
+
+
+class TotalPhaseCSVInputFile : InputFile {
+};
+
+
+#endif //DEMUXUSB_TOTALPHASECSVINPUTFILE_H

@@ -14,6 +14,8 @@ int main(int argc, const char *argv[]) {
 
     if (input_path.extension() == ".pcapng") {
         input = std::make_unique<PcapNGInputFile>(input_path);
+    if (input_path.extension() == ".csv") {
+        input = std::make_unique<TotalPhaseCSVInputFile>(input_path);
     } else {
         std::cerr << "Input file type is not supported." << std::endl;
         exit(-1);
