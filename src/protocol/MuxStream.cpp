@@ -72,7 +72,8 @@ MuxStream::~MuxStream() {
 }
 
 void MuxStream::materialize(plist_service_item &item) {
-    plist_from_memory(reinterpret_cast<const char *>(item.data), item.size, &item.plist);
+    plist_format_t format;
+    plist_from_memory(reinterpret_cast<const char *>(item.data), item.size, &item.plist, &format);
 
     if (PLIST_IS_DICT(item.plist)) {
         plist_dict_iter it{};

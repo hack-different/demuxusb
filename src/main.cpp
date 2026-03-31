@@ -12,7 +12,7 @@ int main(int argc, const char *argv[]) {
 
     std::unique_ptr<InputFile> input;
 
-    if (input_path.extension() == ".pcapng") {
+    if (input_path.extension() == ".pcapng" || input_path.extension() == ".pcap") {
         input = std::make_unique<PcapNGInputFile>(input_path);
     } else {
         std::cerr << "Input file type is not supported." << std::endl;
