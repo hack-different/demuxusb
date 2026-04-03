@@ -18,6 +18,10 @@ namespace demuxusb {
 
         ~PcapNGInputFile() override;
 
+        bool process_dawrin_packet(std::byte *location);
+
+        bool process_usbpcap_packet(std::byte *location);
+
         void parse() override;
     };
 }

@@ -34,6 +34,8 @@
 
 
 #include <memory>
+
+#include "usb/Device.h"
 /*-------------------------------------------------------------------------*/
 /* CONTROL REQUEST SUPPORT */
 /*

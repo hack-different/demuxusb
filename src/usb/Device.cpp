@@ -42,7 +42,7 @@ namespace demuxusb {
                 auto descriptorType = setup.wValue >> 8U;
                 auto descriptorIndex = setup.wValue & 0xFFU;
                 auto *header = (usb_descriptor_header *) data.first;
-                assert(header->bDescriptorType == descriptorType);
+
 
                 switch (descriptorType) {
                     case USB_DT_DEVICE:
@@ -156,7 +156,10 @@ namespace demuxusb {
     }
 
     std::shared_ptr<InterfaceExpert> Device::getExpertForEndpoint(uint8_t endpoint) {
-        const auto &config = this->m_configurations[this->m_currentConfiguration - 1];
+        auto configuration_id = this->m_currentConfiguration - 1;
+        if (configuration_id >= this->m_configurations.size()) { return nullptr; }
+        const auto &config = this->m_configurations[configuration_id];
+
 
         for (const auto &interface: config.interfaces) {
             for (const auto &interface_endpoint: interface.endpoints) {

@@ -4,7 +4,9 @@
 
 #include <memory>
 
-#define TYPE_EPB 0x06
+#define TYPE_SECTION_HEADER 0x0A0D0D0A
+#define TIME_INTERFACE_DESCRIPTOR_BLOCK 0x00000001
+#define TYPE_ENHANCED_PACKET_BLOCK 0x06
 
 #define USB_CONTROL_STAGE_SETUP    0x00
 #define USB_CONTROL_STAGE_DATA     0x01
@@ -15,6 +17,10 @@
 #define USB_EP_ISOCHRONOUS 0x01
 #define USB_EP_BULK        0x02
 #define USB_EP_INTERRUPT   0x03
+
+
+#define LINKTYPE_USB_DARWIN 266
+#define LINKTYPE_USBPCAP 249
 
 #define DARWIN_IO_SUBMIT   0
 #define DARWIN_IO_COMPLETE 1
@@ -104,5 +110,47 @@ typedef struct {
     uint32_t data_len; /* amount of urb data really present in this event*/
     usb_setup_t setup;
 } pcap_usb_header_t;
+
+#pragma pack(1)
+typedef struct
+{
+    uint16_t       headerLen; /* This header length */
+    uint64_t       irpId;     /* I/O Request packet ID */
+    uint32_t  status;    /* USB status code
+                               (on return from host controller) */
+    uint16_t       function;  /* URB Function */
+    uint8_t        info;      /* I/O Request info */
+
+    uint16_t       bus;       /* bus (RootHub) number */
+    uint16_t       device;    /* device address */
+    uint8_t        endpoint;  /* endpoint number and transfer direction */
+    uint8_t        transfer;  /* transfer type */
+
+    uint32_t       dataLength;/* Data length */
+} usbpcap_packet_header_t;
+
+#define USBPCAP_TRANSFER_ISOCHRONOUS 0
+#define USBPCAP_TRANSFER_INTERRUPT 1
+#define USBPCAP_TRANSFER_CONTROL 2
+#define USBPCAP_TRANSFER_BULK 3
+
+#define USBPCAP_CONTROL_STAGE_SETUP    0
+#define USBPCAP_CONTROL_STAGE_DATA     1
+#define USBPCAP_CONTROL_STAGE_STATUS   2
+#define USBPCAP_CONTROL_STAGE_COMPLETE 3
+
+#pragma pack(1)
+typedef struct
+{
+    usbpcap_packet_header_t  header;
+    uint8_t                         stage;
+} usbpcap_buffer_control_header_t;
+
+typedef struct {
+    uint16_t linktype;    // Link layer type (e.g., Ethernet, WLAN)
+    uint16_t reserved;    // Not used; must be 0
+    uint32_t snaplen;     // Max number of octets captured from each packet
+    /* Options follow here (variable length, padded to 32 bits) */
+} pcap_interface_descriptor_t;
 
 #endif
