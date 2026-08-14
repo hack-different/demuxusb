@@ -8,6 +8,11 @@
 using namespace demuxusb;
 
 int main(int argc, const char *argv[]) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <capture_file.pcapng|pcap>" << std::endl;
+        return 1;
+    }
+
     fs::path input_path(argv[1]);
 
     std::unique_ptr<InputFile> input;
