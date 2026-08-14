@@ -39,15 +39,15 @@ void USBMUXInterfaceExpert::processBulkOut(byte_array data) {
         auto *header = (mux_header *) data.first;
 
 
-        switch (ntohl(header->protocol)) {
+        switch (boost::endian::big_to_native(header->protocol)) {
             case MUX_PROTO_TCP: {
-                assert(ntohl(header->magic) == USBMUX_MAGIC_OUT);
+                assert(boost::endian::big_to_native(header->magic) == USBMUX_MAGIC_OUT);
                 assert(data.second >= (sizeof(mux_header) + sizeof(tcphdr)));
                 auto *tcp_header = (tcphdr *) (data.first + sizeof(mux_header));
 
-                auto source = ntohs(tcp_header->source);
-                auto destination = ntohs(tcp_header->dest);
-                auto flags = ntohs(tcp_header->flags);
+                auto source = boost::endian::big_to_native(tcp_header->source);
+                auto destination = boost::endian::big_to_native(tcp_header->dest);
+                auto flags = boost::endian::big_to_native(tcp_header->flags);
 
                 // Magic evaluation for SYN on out (therefore connect)
                 if (flags & USB_TCP_FLAG_SYN) {
@@ -77,15 +77,15 @@ void USBMUXInterfaceExpert::processBulkIn(byte_array data) {
     if (data.second >= sizeof(mux_header)) {
         auto *header = (mux_header *) data.first;
 
-        switch (ntohl(header->protocol)) {
+        switch (boost::endian::big_to_native(header->protocol)) {
             case MUX_PROTO_TCP: {
-                assert(ntohl(header->magic) == USBMUX_MAGIC_IN);
+                assert(boost::endian::big_to_native(header->magic) == USBMUX_MAGIC_IN);
                 assert(data.second >= (sizeof(mux_header) + sizeof(tcphdr)));
                 auto *tcp_header = (tcphdr *) (data.first + sizeof(mux_header));
 
-                auto source = ntohs(tcp_header->source);
-                auto destination = ntohs(tcp_header->dest);
-                auto flags = ntohs(tcp_header->flags);
+                auto source = boost::endian::big_to_native(tcp_header->source);
+                auto destination = boost::endian::big_to_native(tcp_header->dest);
+                auto flags = boost::endian::big_to_native(tcp_header->flags);
 
                 auto stream_id = this->getStreamId(destination, source);
                 auto stream = this->m_streams[stream_id];

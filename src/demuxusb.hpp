@@ -16,6 +16,7 @@
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/endian/conversion.hpp>
 #include <boost/format.hpp>
 
 
