@@ -1,3 +1,5 @@
+[![ci.yaml](https://github.com/hack-different/demuxusb/actions/workflows/ci.yml/badge.svg)](https://github.com/hack-different/demuxusb/actions/workflows/ci.yml)
+
 # DeMuxUSB - Analyze iDevice USB Protocols
 
 DeMuxUSB (a play on `usbmuxd`) is a C++20 program and library suite designed to capture, demultiplex, and analyze USB sessions with Apple iDevices.
