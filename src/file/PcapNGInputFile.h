@@ -12,15 +12,13 @@
 
 namespace demuxusb {
 
+    // Reads little endian PCAPNG captures: any number of sections, each with any number of interfaces, carrying
+    //  Enhanced or Simple Packet Blocks.
     class PcapNGInputFile : public InputFile {
     public:
         explicit PcapNGInputFile(fs::path input) : InputFile(std::move(input)) {}
 
         ~PcapNGInputFile() override;
-
-        bool process_dawrin_packet(std::byte *location);
-
-        bool process_usbpcap_packet(std::byte *location);
 
         void parse() override;
     };

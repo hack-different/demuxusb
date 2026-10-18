@@ -28,7 +28,10 @@
 #define USBMUX_MAGIC_IN 0xFACEFACE
 #define USBMUX_MAGIC_OUT 0xFEEDFACE
 
+#define USB_TCP_FLAG_FIN 0x01U
 #define USB_TCP_FLAG_SYN 0x02U
+#define USB_TCP_FLAG_RST 0x04U
+#define USB_TCP_FLAG_ACK 0x10U
 
 enum mux_protocol {
     MUX_PROTO_VERSION = 0,

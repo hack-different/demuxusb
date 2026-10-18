@@ -33,9 +33,7 @@
 #define __USB_H
 
 
-#include <memory>
-
-#include "usb/Device.h"
+#include <cstdint>
 /*-------------------------------------------------------------------------*/
 /* CONTROL REQUEST SUPPORT */
 /*

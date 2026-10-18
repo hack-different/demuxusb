@@ -18,6 +18,8 @@ namespace demuxusb {
         std::vector<std::byte> data;
     };
 
+    // One alternate setting of an interface, with the endpoints it declares.  All alternate settings of an interface
+    //  share a single expert.
     struct usb_interface {
         usb_interface_descriptor interface;
         std::vector<usb_endpoint_descriptor> endpoints;
@@ -25,11 +27,17 @@ namespace demuxusb {
     };
 
     struct usb_configuration {
-        usb_config_descriptor descriptor;
-        usb_dfu_functional_descriptor dfu_descriptor;
+        usb_config_descriptor descriptor{};
+        usb_dfu_functional_descriptor dfu_descriptor{};
+        bool has_dfu_descriptor{false};
+        // Every interface alternate setting, in descriptor order
         std::vector<usb_interface> interfaces{};
 
-        static void parse(usb_configuration &config, std::byte *data, size_t size);
+        // Parses a complete configuration descriptor set.  Returns false (leaving what could be parsed) when the
+        //  descriptors are malformed.
+        static bool parse(usb_configuration &config, const std::byte *data, size_t size);
+
+        usb_interface *find(uint8_t interface, uint8_t alternate);
     };
 
     // The device class is a state machine that reconstructs the devices properties by composing the control endpoint
@@ -37,15 +45,24 @@ namespace demuxusb {
     //  metadata from the control endpoint allow for endpoint experts to raise the traffic from there.
     class Device {
     public:
-        explicit Device(uint64_t id) : m_device{id}, m_vendorId{}, m_productId{} {}
+        explicit Device(uint64_t id) : m_device{id} {}
 
         [[nodiscard]] uint64_t getIdentifier() const { return this->m_device; }
+
+        [[nodiscard]] bool hasDeviceDescriptor() const { return this->m_hasDeviceDescriptor; }
+
+        [[nodiscard]] const usb_device_descriptor &getDeviceDescriptor() const { return this->m_deviceDescriptor; }
+
+        [[nodiscard]] uint16_t getVendorId() const { return this->m_deviceDescriptor.idVendor; }
+
+        [[nodiscard]] uint16_t getProductId() const { return this->m_deviceDescriptor.idProduct; }
 
         [[nodiscard]] bool isApple() const { return this->m_deviceDescriptor.idVendor == APPLE_VID; }
 
         [[nodiscard]] bool isAppleDFU() const {
             return this->m_deviceDescriptor.idVendor == APPLE_VID &&
-                   this->m_deviceDescriptor.idProduct == IRECV_K_DFU_MODE;
+                   (this->m_deviceDescriptor.idProduct == IRECV_K_DFU_MODE ||
+                    this->m_deviceDescriptor.idProduct == IRECV_K_WTF_MODE);
         }
 
         [[nodiscard]] bool isAppleRecovery() const {
@@ -58,19 +75,23 @@ namespace demuxusb {
             return false;
         }
 
-        std::wstring getString(uint8_t index) {
+        // "DFU", "WTF", "Recovery", "Normal" (any other Apple device) or "Unknown"
+        [[nodiscard]] std::string getMode() const;
+
+        // UTF-8 decoded string descriptor, or "<unknown>"
+        std::string getString(uint8_t index) {
             if (this->m_strings.contains(index)) {
                 return this->m_strings[index];
             }
 
-            return L"<unknown>";
+            return "<unknown>";
         }
 
-        std::wstring getProduct() { return this->getString(this->m_deviceDescriptor.iProduct); }
+        std::string getProduct() { return this->getString(this->m_deviceDescriptor.iProduct); }
 
-        std::wstring getManufacturer() { return this->getString(this->m_deviceDescriptor.iManufacturer); }
+        std::string getManufacturer() { return this->getString(this->m_deviceDescriptor.iManufacturer); }
 
-        std::wstring getSerial() { return this->getString(this->m_deviceDescriptor.iSerialNumber); }
+        std::string getSerial() { return this->getString(this->m_deviceDescriptor.iSerialNumber); }
 
         void processControlPacketIn(uint8_t endpoint, usb_setup_t setup, byte_array data);
 
@@ -88,29 +109,51 @@ namespace demuxusb {
 
         [[nodiscard]] uint64_t getControlByteCount() const { return this->m_controlByteCount; }
 
+        [[nodiscard]] uint8_t getCurrentConfiguration() const { return this->m_currentConfiguration; }
+
+        [[nodiscard]] uint8_t getAlternateSetting(uint8_t interface) const {
+            auto found = this->m_alternates.find(interface);
+            return found == this->m_alternates.end() ? 0 : found->second;
+        }
+
+        [[nodiscard]] const std::map<uint8_t, usb_configuration> &getConfigurations() const {
+            return this->m_configurations;
+        }
+
+        [[nodiscard]] const std::vector<bos_descriptor> &getBOSDescriptors() const { return this->m_bosDescriptors; }
+
+        // Every distinct expert attached to any interface of any configuration
         std::vector<std::shared_ptr<InterfaceExpert>> getExperts();
 
+        // Descriptor or protocol irregularities observed on the default control pipe
+        [[nodiscard]] const std::vector<std::string> &getAnomalies() const { return this->m_anomalies; }
+
     protected:
+        void processDescriptor(usb_setup_t setup, byte_array data);
+
+        void attachExperts(usb_configuration &config);
+
+        usb_configuration *activeConfiguration();
+
         std::shared_ptr<InterfaceExpert> getExpertForEndpoint(uint8_t endpoint);
 
+        std::shared_ptr<InterfaceExpert> getExpertForControl(const usb_setup_t &setup);
+
         uint64_t m_device;
-        uint16_t m_vendorId;
-        uint16_t m_productId;
 
         uint64_t m_packetCount{};
         uint64_t m_byteCount{};
         uint64_t m_controlPacketCount{};
         uint64_t m_controlByteCount{};
 
+        bool m_hasDeviceDescriptor{false};
         uint8_t m_currentConfiguration{};
         usb_device_descriptor m_deviceDescriptor{};
-        std::vector<usb_configuration> m_configurations{};
-        std::map<uint16_t, std::wstring> m_strings;
+        std::map<uint8_t, usb_configuration> m_configurations{};
+        std::map<uint8_t, uint8_t> m_alternates{};
+        std::map<uint8_t, std::string> m_strings;
         std::vector<bos_descriptor> m_bosDescriptors{};
-
-        usb_setup_t m_controlSetup{};
-
-        std::map<uint32_t, std::shared_ptr<InterfaceExpert>> m_interfaces{};
+        std::vector<std::string> m_anomalies{};
     };
 }
 
