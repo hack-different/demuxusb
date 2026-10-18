@@ -6,159 +6,114 @@
 
 
 namespace demuxusb {
-    bool PcapNGInputFile::process_dawrin_packet(std::byte *location) {
-        auto *usbHeader = reinterpret_cast<darwin_usb_header_1_1_t *>(location + sizeof(block_t) + sizeof(pcapng_epb_t));
-        assert(usbHeader->version == 0x101);
-        assert(usbHeader->headerLength == sizeof(darwin_usb_header_1_1_t));
+    // Block type + length at the start and the repeated length at the end
+    static const size_t BLOCK_OVERHEAD = sizeof(block_t) + sizeof(uint32_t);
 
-        auto deviceAddress = (static_cast<uint64_t>(usbHeader->locationId) << 32U) | usbHeader->deviceId;
-
-        auto *dataAddress = (location + sizeof(block_t) + sizeof(pcapng_epb_t) + usbHeader->headerLength);
-        const auto data = byte_array{dataAddress, usbHeader->length};
-        const auto endpointId = (usb_endpoint_id) usbHeader->endpointId;
-
-        auto &device = this->m_devices[deviceAddress];
-
-        if (device == nullptr) {
-            device = std::make_shared<DeviceHandle>(deviceAddress);
-            this->m_devices[deviceAddress] = device;
-        }
-
-        switch (usbHeader->endpointType) {
-            case USB_EP_CONTROL:
-                if (usbHeader->type == DARWIN_IO_SUBMIT) {
-                    auto *setup = reinterpret_cast<usb_setup_t *>(data.first);
-                    device->beginControl(USB_ENDPOINT_ID(usbHeader->endpointId), usbHeader->uniqueId, setup);
-                } else if (usbHeader->type == DARWIN_IO_COMPLETE) {
-                    auto setup = device->endControl(USB_ENDPOINT_ID(usbHeader->endpointId),
-                                                    usbHeader->uniqueId);
-
-                    if (USB_ENDPOINT_IN(usbHeader->endpointId)) {
-                        device->device()->processControlPacketIn(USB_ENDPOINT_ID(usbHeader->endpointId), setup,
-                                                                 data);
-                    } else {
-                        device->device()->processControlPacketOut(USB_ENDPOINT_ID(usbHeader->endpointId), setup,
-                                                                  data);
-                    }
-                }
-                break;
-            case USB_EP_BULK:
-                if (usbHeader->type == DARWIN_IO_SUBMIT) {
-                    device->beginBulk(usbHeader->endpointId, usbHeader->uniqueId);
-                } else {
-                    device->endBulk(usbHeader->endpointId, usbHeader->uniqueId);
-
-                    if (USB_ENDPOINT_IN(usbHeader->endpointId)) {
-                        device->device()->processBulkPacketIn(USB_ENDPOINT_ID(usbHeader->endpointId), data);
-                    } else {
-                        device->device()->processBulkPacketOut(USB_ENDPOINT_ID(usbHeader->endpointId), data);
-                    }
-                }
-                break;
-            default: ;
-        }
-        return true;
-    }
-
-    bool PcapNGInputFile::process_usbpcap_packet(std::byte *location) {
-
-        auto *usbHeader = reinterpret_cast<usbpcap_packet_header_t *>(location + sizeof(block_t) + sizeof(pcapng_epb_t));
-        if (usbHeader->transfer ==  USBPCAP_TRANSFER_CONTROL) {
-            assert(usbHeader->headerLen == sizeof(usbpcap_buffer_control_header_t));
-        } else {
-            assert(usbHeader->headerLen == sizeof(usbpcap_packet_header_t));
-        }
-
-        auto deviceAddress = usbHeader->device;
-
-        auto *dataAddress = (location + sizeof(block_t) + sizeof(pcapng_epb_t) + usbHeader->headerLen);
-        const auto data = byte_array{dataAddress, usbHeader->dataLength};
-        const auto endpointId = (usb_endpoint_id) usbHeader->endpoint;
-
-        auto &device = this->m_devices[deviceAddress];
-
-        if (device == nullptr) {
-            device = std::make_shared<DeviceHandle>(deviceAddress);
-            this->m_devices[deviceAddress] = device;
-        }
-        auto *controlHeader = reinterpret_cast<usbpcap_buffer_control_header_t *>(location + sizeof(block_t) + sizeof(pcapng_epb_t));
-
-        switch (usbHeader->transfer) {
-            case USBPCAP_TRANSFER_CONTROL:
-
-                if (controlHeader->stage == USBPCAP_CONTROL_STAGE_SETUP) {
-                    auto *setup = reinterpret_cast<usb_setup_t *>(data.first);
-                    device->beginControl(USB_ENDPOINT_ID(usbHeader->endpoint), usbHeader->irpId, setup);
-                } else if (controlHeader->stage == USBPCAP_CONTROL_STAGE_DATA) {
-                    auto setup = device->endControl(USB_ENDPOINT_ID(usbHeader->endpoint),
-                                                    usbHeader->irpId);
-
-                    if (USB_ENDPOINT_IN(usbHeader->endpoint)) {
-                        device->device()->processControlPacketIn(USB_ENDPOINT_ID(usbHeader->endpoint), setup,
-                                                                 data);
-                    } else {
-                        device->device()->processControlPacketOut(USB_ENDPOINT_ID(usbHeader->endpoint), setup,
-                                                                  data);
-                    }
-                }
-                break;
-            case USBPCAP_TRANSFER_BULK:
-                device->beginBulk(usbHeader->endpoint, usbHeader->irpId);
-                device->endBulk(usbHeader->endpoint, usbHeader->irpId);
-
-                auto endpoint_id = USB_ENDPOINT_ID(usbHeader->endpoint);
-                if (USB_ENDPOINT_IN(usbHeader->endpoint)) {
-                    device->device()->processBulkPacketIn(endpoint_id, data);
-                } else {
-                    device->device()->processBulkPacketOut(endpoint_id, data);
-                }
-        }
-        return true;
-
-    }
+    struct pcapng_interface {
+        uint16_t linktype;
+        uint32_t snaplen;
+    };
 
     void PcapNGInputFile::parse() {
+        const auto *location = this->data();
+        size_t offset = 0;
+        std::vector<pcapng_interface> interfaces;
 
-        auto *location = (std::byte *) this->m_mappedInputFile.data();
-        const auto *endLocation = location + this->m_mappedInputFile.size();
+        while (offset < this->size()) {
+            auto remaining = this->size() - offset;
+            auto *blockStart = location + offset;
 
-        uint16_t interface_type;
-
-        while (location < endLocation) {
-            auto *block = reinterpret_cast<block_t *>(location);
-            if (block->type == TIME_INTERFACE_DESCRIPTOR_BLOCK) {
-                auto *interfaceDescriptor = reinterpret_cast<pcap_interface_descriptor_t *>(location + sizeof(block_t));
-
-                interface_type = interfaceDescriptor->linktype;
-                location += block->length;
-                continue;
+            block_t block{};
+            if (remaining < BLOCK_OVERHEAD || !readStruct(blockStart, remaining, block)) {
+                this->warn("Capture ends with a truncated block");
+                break;
             }
 
-            if (block->type == TYPE_ENHANCED_PACKET_BLOCK) {
-                auto *epb = reinterpret_cast<pcapng_epb_t *>(location + sizeof(block_t));
-                assert(epb->interface_id == 0);
+            if (offset == 0 && block.type != TYPE_SECTION_HEADER) {
+                throw ParseError("Not a PCAPNG file: missing section header block");
+            }
 
-                switch (interface_type) {
-                    case LINKTYPE_USB_DARWIN:
-                        process_dawrin_packet(location);
-                        break;
+            if (block.type == TYPE_SECTION_HEADER) {
+                pcapng_shb_t sectionHeader{};
+                if (!readStruct(blockStart + sizeof(block_t), remaining - sizeof(block_t), sectionHeader)) {
+                    throw ParseError("Truncated PCAPNG section header block");
+                }
+                if (sectionHeader.byte_order_magic == PCAPNG_BYTE_ORDER_MAGIC_SWAPPED) {
+                    throw ParseError("Big endian PCAPNG captures are not supported");
+                }
+                if (sectionHeader.byte_order_magic != PCAPNG_BYTE_ORDER_MAGIC) {
+                    throw ParseError("Corrupt PCAPNG section header byte order magic");
+                }
+                // Interface ids are scoped to their section
+                interfaces.clear();
+            }
 
-                    case LINKTYPE_USBPCAP:
-                        process_usbpcap_packet(location);
+            if (block.length < BLOCK_OVERHEAD || block.length % 4 != 0 || block.length > remaining) {
+                if (offset == 0) { throw ParseError("Corrupt PCAPNG section header block length"); }
+                this->warn((boost::format("Corrupt or truncated block at offset %1%; stopping") % offset).str());
+                break;
+            }
+
+            uint32_t trailingLength = 0;
+            readStruct(blockStart + block.length - sizeof(uint32_t), sizeof(uint32_t), trailingLength);
+            if (trailingLength != block.length) {
+                if (offset == 0) { throw ParseError("Corrupt PCAPNG section header block"); }
+                this->warn((boost::format("Block at offset %1% has mismatched trailing length; stopping") % offset).str());
+                break;
+            }
+
+            auto *body = blockStart + sizeof(block_t);
+            auto bodyLength = block.length - BLOCK_OVERHEAD;
+
+            switch (block.type) {
+                case TIME_INTERFACE_DESCRIPTOR_BLOCK: {
+                    pcap_interface_descriptor_t interfaceDescriptor{};
+                    if (!readStruct(body, bodyLength, interfaceDescriptor)) {
+                        this->warn("Truncated interface description block");
                         break;
-                    default:
-                        continue;
+                    }
+                    interfaces.push_back({interfaceDescriptor.linktype, interfaceDescriptor.snaplen});
+                    break;
                 }
 
+                case TYPE_ENHANCED_PACKET_BLOCK: {
+                    pcapng_epb_t epb{};
+                    if (!readStruct(body, bodyLength, epb)) {
+                        this->warn("Truncated enhanced packet block");
+                        break;
+                    }
+                    if (epb.interface_id >= interfaces.size()) {
+                        this->warn((boost::format("Packet references undeclared interface %1%") %
+                                    epb.interface_id).str());
+                        break;
+                    }
+                    if (epb.captured_len > bodyLength - sizeof(pcapng_epb_t)) {
+                        this->warn("Enhanced packet block data overruns the block");
+                        break;
+                    }
+                    this->processPacket(interfaces[epb.interface_id].linktype, body + sizeof(pcapng_epb_t),
+                                        epb.captured_len);
+                    break;
+                }
+
+                case TYPE_SIMPLE_PACKET_BLOCK: {
+                    pcapng_spb_t spb{};
+                    if (!readStruct(body, bodyLength, spb) || interfaces.empty()) {
+                        this->warn("Simple packet block without an interface");
+                        break;
+                    }
+                    size_t captured = std::min<size_t>(spb.packet_len, bodyLength - sizeof(pcapng_spb_t));
+                    if (interfaces[0].snaplen != 0) { captured = std::min<size_t>(captured, interfaces[0].snaplen); }
+                    this->processPacket(interfaces[0].linktype, body + sizeof(pcapng_spb_t), captured);
+                    break;
+                }
+
+                default:
+                    // Name resolution, statistics, custom blocks...
+                    break;
             }
 
-            auto *trailingSize = reinterpret_cast<uint32_t *>(location + block->length - sizeof(uint32_t));
-            if (block->length != *trailingSize) {
-                std::cerr << "Block length != trailingLength" << std::endl;
-                exit(-1);
-            }
-
-            location += block->length;
+            offset += block.length;
         }
     }
 

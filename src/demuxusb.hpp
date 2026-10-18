@@ -10,7 +10,12 @@
 #include <string>
 #include <memory>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <iostream>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 // Boost
@@ -20,7 +25,7 @@
 #include <boost/format.hpp>
 
 
-#include <plist/plist++.h>
+#include <plist/plist.h>
 
 namespace fs = boost::filesystem;
 namespace io = boost::iostreams;
@@ -47,5 +52,62 @@ enum apple_usb_device_id {
     IRECV_K_WTF_MODE = 0x1222,
     IRECV_K_DFU_MODE = 0x1227
 };
+
+namespace demuxusb {
+    // Raised when a capture is structurally unreadable (bad magic, unsupported byte order, corrupt block framing).
+    //  Individual malformed packets are reported and skipped instead.
+    class ParseError : public std::runtime_error {
+    public:
+        using std::runtime_error::runtime_error;
+    };
+
+    // Copies a trivially copyable structure out of capture memory.  Capture data is untrusted and unaligned, so all
+    //  structure access goes through here rather than reinterpret_cast.
+    template<typename T>
+    bool readStruct(const std::byte *data, size_t available, T &out) {
+        static_assert(std::is_trivially_copyable_v<T>);
+        if (data == nullptr || available < sizeof(T)) { return false; }
+        std::memcpy(&out, data, sizeof(T));
+        return true;
+    }
+
+    // Decodes UTF-16LE (as used by USB string descriptors) into UTF-8.
+    inline std::string utf16leToUtf8(const std::byte *data, size_t length) {
+        std::string result;
+        for (size_t i = 0; i + 1 < length; i += 2) {
+            uint32_t unit = static_cast<uint8_t>(data[i]) | (static_cast<uint8_t>(data[i + 1]) << 8U);
+            uint32_t codepoint = unit;
+
+            if (unit >= 0xD800 && unit <= 0xDBFF && i + 3 < length) {
+                uint32_t low = static_cast<uint8_t>(data[i + 2]) | (static_cast<uint8_t>(data[i + 3]) << 8U);
+                if (low >= 0xDC00 && low <= 0xDFFF) {
+                    codepoint = 0x10000 + ((unit - 0xD800) << 10U) + (low - 0xDC00);
+                    i += 2;
+                } else {
+                    codepoint = 0xFFFD;
+                }
+            } else if (unit >= 0xD800 && unit <= 0xDFFF) {
+                codepoint = 0xFFFD;
+            }
+
+            if (codepoint < 0x80) {
+                result.push_back(static_cast<char>(codepoint));
+            } else if (codepoint < 0x800) {
+                result.push_back(static_cast<char>(0xC0 | (codepoint >> 6U)));
+                result.push_back(static_cast<char>(0x80 | (codepoint & 0x3FU)));
+            } else if (codepoint < 0x10000) {
+                result.push_back(static_cast<char>(0xE0 | (codepoint >> 12U)));
+                result.push_back(static_cast<char>(0x80 | ((codepoint >> 6U) & 0x3FU)));
+                result.push_back(static_cast<char>(0x80 | (codepoint & 0x3FU)));
+            } else {
+                result.push_back(static_cast<char>(0xF0 | (codepoint >> 18U)));
+                result.push_back(static_cast<char>(0x80 | ((codepoint >> 12U) & 0x3FU)));
+                result.push_back(static_cast<char>(0x80 | ((codepoint >> 6U) & 0x3FU)));
+                result.push_back(static_cast<char>(0x80 | (codepoint & 0x3FU)));
+            }
+        }
+        return result;
+    }
+}
 
 #endif

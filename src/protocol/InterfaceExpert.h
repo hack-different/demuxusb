@@ -6,6 +6,14 @@
 #define demuxusb_INTERFACEEXPERT_H
 
 #include "../demuxusb.hpp"
+#include "pcapng.h"
+#include "usb.h"
+
+// A file-like product of protocol analysis (a DFU image, a recovery mode upload, ...) that can be written to disk.
+struct ExtractedArtifact {
+    std::string name;
+    std::vector<std::byte> data;
+};
 
 class InterfaceExpert {
 public:
@@ -14,12 +22,12 @@ public:
 
     virtual ~InterfaceExpert() = default;
 
-    virtual void processControlOut(byte_array data) {
+    virtual void processControlOut(const usb_setup_t &setup, byte_array data) {
         this->m_controlPackets++;
         this->m_controlBytes += data.second;
     };
 
-    virtual void processControlIn(byte_array data) {
+    virtual void processControlIn(const usb_setup_t &setup, byte_array data) {
         this->m_controlPackets++;
         this->m_controlBytes += data.second;
     };
@@ -36,7 +44,25 @@ public:
 
     virtual bool isEmpty() { return (this->m_controlPackets == 0) && (this->m_packets == 0); }
 
+    // One line (or short block) summary of the interface.
     virtual std::string toString();
+
+    // Verbose decode of everything the expert understood (commands, property lists, ...).  Empty when there is none.
+    virtual std::string details() { return {}; }
+
+    virtual std::vector<ExtractedArtifact> getArtifacts() { return {}; }
+
+    [[nodiscard]] uint8_t getConfiguration() const { return this->m_configuration; }
+
+    [[nodiscard]] uint8_t getInterface() const { return this->m_interface; }
+
+    [[nodiscard]] uint32_t getControlPacketCount() const { return this->m_controlPackets; }
+
+    [[nodiscard]] uint32_t getPacketCount() const { return this->m_packets; }
+
+    [[nodiscard]] uint64_t getControlByteCount() const { return this->m_controlBytes; }
+
+    [[nodiscard]] uint64_t getByteCount() const { return this->m_bytes; }
 
 protected:
     uint8_t m_configuration;
